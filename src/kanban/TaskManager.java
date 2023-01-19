@@ -1,65 +1,230 @@
-package kanban;
+package kanban;    //Ивану: не понял комментарий про пакеты.
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
 public class TaskManager {
 
-	private HashMap<Long, CommonTask> tasks;
+	private HashMap<Long, Task> tasks;
+	
+    /**
+     * @constructor
+     */
+    public TaskManager() {
+        this.tasks = new HashMap<>();
+    }
+	
+    /**
+     * Методы для получения задач по типам теперь возвращают списки,
+     * но списки id объектов в HashMap, а не сами объекты. Просьба
+     * подтвердить, правильно ли я понял комментарий.
+     * Также все create, edit, get, remove, clear методы написаны
+     * отдельно, для каждого типа задач. 
+     */
+    
+	/**
+     * @return all the tasks
+     */
+    public ArrayList<Long> getAllTasks() {
+        ArrayList<Long> allTasks = new ArrayList<>();
+        for (Long task:tasks.keySet()) {
+            allTasks.add(task); 
+        }
+        return allTasks;
+    }
 
 	/**
-	 * @return the tasks
+	 * @return all Common tasks
 	 */
-	public HashMap<Long, CommonTask> getTasks() {
-		return tasks;
-	}
-
-	/**
-	 * @constructor
-	 */
-	public TaskManager(String userName) {
-		this.tasks = FileHandler.loadUserTasks(userName);
+	public ArrayList<Long> getAllCommonTasks() {
+		ArrayList<Long> commonTasks = new ArrayList<>();
+	    for (Long task:tasks.keySet()) {
+	        if (tasks.get(task) instanceof CommonTask) {
+	            commonTasks.add(task);  
+	        }
+		}
+	    return commonTasks;
 	}
 	
 	/**
-	 * @clear the tasks
+     * @return All Epic tasks
+     */
+    public ArrayList<Long> getAllEpicTasks() {
+        ArrayList<Long> epicTasks = new ArrayList<>();
+        for (Long task:tasks.keySet()) {
+            if (tasks.get(task) instanceof EpicTask) {
+                epicTasks.add(task);  
+            }
+        }
+        return epicTasks;
+    }
+    
+    /**
+     * @return All Sub tasks
+     */
+    public ArrayList<Long> getAllSubTasks() {
+        ArrayList<Long> subTasks = new ArrayList<>();
+        for (Long task:tasks.keySet()) {
+            if (tasks.get(task) instanceof SubTask) {
+                subTasks.add(task);  
+            }
+        }
+        return subTasks;
+    }
+
+	/**
+	 * @clear all the tasks
 	 */
 	public void clearTasks() {
 		this.tasks.clear();
 	}
 	
 	/**
-	 * @return the task by id
+     * @clear all the Common tasks
+     */
+    public void clearCommonTasks() {
+        for (Long task:tasks.keySet()) {
+            if (tasks.get(task) instanceof CommonTask) {
+                tasks.remove(task);  
+            }
+        }
+    }
+    
+    /**
+     * @clear all the Epic tasks
+     */
+    public void clearEpicTasks() {
+        for (Long task:tasks.keySet()) {
+            if (tasks.get(task) instanceof EpicTask) {
+                tasks.remove(task);  
+            }
+        }
+    }
+    
+    /**
+     * @clear all the Sub tasks
+     */
+    public void clearSubTasks() {
+        for (Long task:tasks.keySet()) {
+            if (tasks.get(task) instanceof SubTask) {
+                this.removeSubTask(task);  
+            }
+        }
+    }
+	
+	/**
+	 * @return the Common task by id
 	 */
-	public CommonTask getTask(Long id) {
-		return this.tasks.get(id);
+	public CommonTask getCommonTask(Long id) {
+	    CommonTask task = new CommonTask.Builder().build();
+	    if (tasks.get(id) instanceof CommonTask) {
+	        task = (CommonTask) this.tasks.get(id);
+        }
+        return task;
 	}
 	
 	/**
-	 * @edit the task by id
+     * @return the Epic task by id
+     */
+    public EpicTask getEpicTask(Long id) {
+        EpicTask task = new EpicTask.Builder().build();
+        if (tasks.get(id) instanceof EpicTask) {
+            task = (EpicTask) this.tasks.get(id);
+        }
+        return task;
+    }
+    
+    /**
+     * @return the Sub task by id
+     */
+    public SubTask getSubTask(Long id) {
+        SubTask task = new SubTask.Builder().build();
+        if (tasks.get(id) instanceof SubTask) {
+            task = (SubTask) this.tasks.get(id);
+        }
+        return task;
+    }
+	
+	/**
+	 * @edit the Common task by id
 	 */
-	public void editTask(Long id, CommonTask task) {
-		this.tasks.put(id, task);
+	public void editCommonTask(Long id, CommonTask task) {
+	    if (tasks.get(id) instanceof CommonTask) {
+	        this.tasks.put(id, task);
+        }	    
 	}
 	
 	/**
-	 * @remove the task by id
+     * @edit the Epic task by id
+     */
+    public void editEpicTask(Long id, EpicTask task) {
+        if (tasks.get(id) instanceof EpicTask) {
+            this.tasks.put(id, task);
+        }
+    }
+    
+    /**
+     * @edit the Sub task by id
+     */
+    public void editSubTask(Long id, SubTask task) {
+        if (tasks.get(id) instanceof SubTask) {
+            this.tasks.put(id, task);
+            this.updateEpicStatus(task.getSuperTask());
+        }
+    }
+	
+	/**
+     * @remove the Common task by id
+     */
+    public void removeCommonTask(Long id) {
+        if (this.tasks.get(id) instanceof CommonTask) {
+            this.tasks.remove(id);
+        }  
+    }
+	
+	/**
+	 * @remove the Epic task by id
 	 */
-	public void removeTask(Long id) {
-		this.tasks.remove(id);
+	public void removeEpicTask(Long id) {
+		if (this.tasks.get(id) instanceof EpicTask) {
+		    ArrayList<Long> subTasks = ((EpicTask) this.tasks.get(id)).getSubTasks();
+	        this.tasks.remove(id);
+	        for (Long subTask:subTasks) {
+	            this.tasks.remove(subTask);
+	        }
+		}
 	}
+	
+	/**
+     * @remove the Sub task by id
+     */
+    public void removeSubTask(Long id) {
+        if (this.tasks.get(id) instanceof SubTask) {
+            Long superTaskId = ((SubTask) this.tasks.get(id)).getSuperTask();
+            this.tasks.remove(id);
+            ((EpicTask) this.tasks.get(superTaskId)).getSubTasks().remove(
+                    ((EpicTask) this.tasks.get(superTaskId)).getSubTasks().indexOf(id));
+            this.updateEpicStatus(superTaskId);
+        }
+    }
 	
 	/**
 	 * @return the epic task subtasks by id
 	 */
 	public ArrayList<Long> getEpicSubTasks(Long id){
-		return ((EpicTask) this.tasks.get(id)).getSubTasks();
+	    ArrayList<Long> subTasks = new ArrayList<>();
+	    if (this.tasks.get(id) instanceof EpicTask) {
+	        subTasks = ((EpicTask) this.tasks.get(id)).getSubTasks();
+	    }
+	    return subTasks;
 	}
 	
+	
+	// Учёл, логика автоматизирована, метод скрыт
 	/**
 	 * @update epic task status by id
 	 */
-	public void updateEpicStatus(Long id) {
+	private void updateEpicStatus(Long id) {
 
 		ArrayList<String> statuses = new ArrayList<>();
 		
@@ -83,15 +248,73 @@ public class TaskManager {
 	}
 	
 	/**
-	 * @put new task to the tasks
+	 * @put new Common task to the tasks
 	 */
-	public Long createTask(CommonTask task) {
-		Random random = new Random();
-		Long newId = Math.abs(random.nextLong());
-		while(this.tasks.containsKey(newId)) {
-			newId = random.nextLong();
-		}
-		this.tasks.put(newId, task);
-		return newId;
+	public Long createCommonTask(CommonTask task) {
+	    Long newId = null;
+	    if (task instanceof CommonTask) {
+	        Random random = new Random();
+	        newId = Math.abs(random.nextLong());
+	        while(this.tasks.containsKey(newId)) {
+	            newId = random.nextLong();
+	        }
+	        this.tasks.put(newId, task);
+	    }
+	    return newId;
 	}
+	
+	/**
+     * @put new Epic task to the tasks
+     */
+    public Long createEpicTask(EpicTask task) {
+        Long newId = null;
+        if (task instanceof EpicTask) {
+            Random random = new Random();
+            newId = Math.abs(random.nextLong());
+            while(this.tasks.containsKey(newId)) {
+                newId = random.nextLong();
+            }
+            this.tasks.put(newId, task);
+        }
+        return newId;
+    }
+    
+    /**
+     * @put new Sub task to the tasks
+     */
+    public Long createSubTask(SubTask task) {
+        Long newId = null;
+        if (task instanceof SubTask) {
+            Random random = new Random();
+            newId = Math.abs(random.nextLong());
+            while(this.tasks.containsKey(newId)) {
+                newId = random.nextLong();
+            }
+            this.tasks.put(newId, task);
+            ArrayList<Long> subTasks = ((EpicTask) this.tasks.get(task.getSuperTask())).getSubTasks();
+            subTasks.add(newId);
+            ((EpicTask) this.tasks.get(task.getSuperTask())).setSubTasks(subTasks);
+            this.updateEpicStatus(task.getSuperTask());
+        }
+        return newId;
+    }
+    
+    /**
+     * @return String of all tasks
+     */
+    @Override
+    public String toString() {
+        String result = "";
+        for (Long task:this.tasks.keySet()) {
+            result += this.taskToString(task) + ", ";
+        }
+        return result;
+    }
+    
+    /**
+     * @return String of one tasks
+     */
+    public String taskToString(Long id) {
+        return id + " " + this.tasks.get(id).toString();
+    }
 }

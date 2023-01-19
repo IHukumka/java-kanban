@@ -1,9 +1,9 @@
 package kanban;
 import java.util.ArrayList;
 
-public class EpicTask extends CommonTask {
+public class EpicTask extends Task {
 
-	ArrayList<Long> subTasks;
+	private ArrayList<Long> subTasks;
 
 	/**
 	 * @return the subTasks
@@ -21,10 +21,10 @@ public class EpicTask extends CommonTask {
 
 	public EpicTask (EpicTask.Builder builder) {
 		super(builder);
-		this.subTasks = builder.subTasks;
+		this.subTasks = new ArrayList<>();
 	}
 	
-	public static class Builder extends CommonTask.Builder<Builder>{
+	public static class Builder extends Task.Builder<Builder>{
 		
 		ArrayList<Long> subTasks;
 		
@@ -34,14 +34,6 @@ public class EpicTask extends CommonTask {
 		public Builder() {
 		}
 
-		/**
-		 * @param subTasks the subTasks to set
-		 */
-		public Builder setSubTasks(ArrayList<Long> subTasks) {
-			this.subTasks = subTasks;
-			return this;
-		}
-		
 		@Override
 		public EpicTask build() {
 			return new EpicTask(this);

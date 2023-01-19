@@ -1,9 +1,8 @@
 package kanban;
 
-
-public class SubTask extends CommonTask {
+public class SubTask extends Task {
 	
-	Long superTask;
+	private Long superTask;
 
 	/**
 	 * @return the superTask
@@ -25,7 +24,7 @@ public class SubTask extends CommonTask {
 		this.superTask = builder.superTask;
 	}
 	
-	public static class Builder extends CommonTask.Builder<Builder>{
+	public static class Builder extends Task.Builder<Builder>{
 		
 		Long superTask;
 		
