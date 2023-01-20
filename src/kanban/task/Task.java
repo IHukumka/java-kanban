@@ -1,4 +1,4 @@
-package kanban;
+package kanban.task;
 
 public class Task {
 
@@ -47,7 +47,10 @@ public class Task {
     public String getStatus() {
         return status;
     }
-
+    
+    /**
+     * @constructor
+     */
     public Task(Task.Builder<?> builder) {
         this.name = builder.name;
         this.description = builder.description;
