@@ -2,315 +2,129 @@ package kanban.manager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Random;
 
 import kanban.task.CommonTask;
 import kanban.task.EpicTask;
 import kanban.task.SubTask;
 import kanban.task.Task;
 
-public class TaskManager {
+public interface TaskManager {
 
-    private HashMap<Long, Task> tasks;
-
-    /**
-     * @constructor
-     */
-    public TaskManager() {
-        this.tasks = new HashMap<>();
-    }
+    public static final HashMap<Long, Task> tasks = new HashMap<Long, Task>();
 
     /**
      * @return all the tasks
      */
-    public ArrayList<Task> getAllTasks() {
-        ArrayList<Task> allTasks = new ArrayList<>();
-        for (Task task : tasks.values()) {
-            allTasks.add(task);
-        }
-        return allTasks;
-    }
+    public ArrayList<Task> getAllTasks();
 
     /**
      * @return all Common tasks
      */
-    public ArrayList<Task> getAllCommonTasks() {
-        ArrayList<Task> commonTasks = new ArrayList<>();
-        for (Task task : tasks.values()) {
-            if (task instanceof CommonTask) {
-                commonTasks.add(task);
-            }
-        }
-        return commonTasks;
-    }
+    public ArrayList<Task> getAllCommonTasks();
 
     /**
      * @return All Epic tasks
      */
-    public ArrayList<Task> getAllEpicTasks() {
-        ArrayList<Task> epicTasks = new ArrayList<>();
-        for (Task task : tasks.values()) {
-            if (task instanceof EpicTask) {
-                epicTasks.add(task);
-            }
-        }
-        return epicTasks;
-    }
+    public ArrayList<Task> getAllEpicTasks();
 
     /**
      * @return All Sub tasks
      */
-    public ArrayList<Task> getAllSubTasks() {
-        ArrayList<Task> subTasks = new ArrayList<>();
-        for (Task task : tasks.values()) {
-            if (task instanceof SubTask) {
-                subTasks.add(task);
-            }
-        }
-        return subTasks;
-    }
+    public ArrayList<Task> getAllSubTasks();
 
     /**
      * @clear all the tasks
      */
-    public void clearTasks() {
-        this.tasks.clear();
-    }
+    public void clearTasks();
 
     /**
      * @clear all the Common tasks
      */
-    public void clearCommonTasks() {
-        for (Long task : tasks.keySet()) {
-            if (tasks.get(task) instanceof CommonTask) {
-                tasks.remove(task);
-            }
-        }
-    }
+    public void clearCommonTasks();
 
     /**
      * @clear all the Epic tasks
      */
-    public void clearEpicTasks() {
-        for (Long task : tasks.keySet()) {
-            if (tasks.get(task) instanceof EpicTask) {
-                tasks.remove(task);
-            }
-        }
-    }
+    public void clearEpicTasks();
 
     /**
      * @clear all the Sub tasks
      */
-    public void clearSubTasks() {
-        for (Long task : tasks.keySet()) {
-            if (tasks.get(task) instanceof SubTask) {
-                this.removeSubTask(task);
-            }
-        }
-    }
+    public void clearSubTasks();
 
     /**
      * @return the Common task by id
      */
-    public CommonTask getCommonTask(Long id) {
-        CommonTask task = new CommonTask.Builder().build();
-        if (tasks.get(id) instanceof CommonTask) {
-            task = (CommonTask) this.tasks.get(id);
-        }
-        return task;
-    }
+    public CommonTask getCommonTask(Long id, InMemoryHistoryManager historyManager);
 
     /**
      * @return the Epic task by id
      */
-    public EpicTask getEpicTask(Long id) {
-        EpicTask task = new EpicTask.Builder().build();
-        if (tasks.get(id) instanceof EpicTask) {
-            task = (EpicTask) this.tasks.get(id);
-        }
-        return task;
-    }
+    public EpicTask getEpicTask(Long id, InMemoryHistoryManager historyManager);
 
     /**
      * @return the Sub task by id
      */
-    public SubTask getSubTask(Long id) {
-        SubTask task = new SubTask.Builder().build();
-        if (tasks.get(id) instanceof SubTask) {
-            task = (SubTask) this.tasks.get(id);
-        }
-        return task;
-    }
+    public SubTask getSubTask(Long id, InMemoryHistoryManager historyManager);
 
     /**
      * @edit the Common task by id
      */
-    public void editCommonTask(Long id, CommonTask task) {
-        if (tasks.get(id) instanceof CommonTask) {
-            this.tasks.put(id, task);
-        }
-    }
+    public void editCommonTask(Long id, CommonTask task);
 
     /**
      * @edit the Epic task by id
      */
-    public void editEpicTask(Long id, EpicTask task) {
-        if (tasks.get(id) instanceof EpicTask) {
-            this.tasks.put(id, task);
-        }
-    }
+    public void editEpicTask(Long id, EpicTask task);
 
     /**
      * @edit the Sub task by id
      */
-    public void editSubTask(Long id, SubTask task) {
-        if (tasks.get(id) instanceof SubTask) {
-            this.tasks.put(id, task);
-            this.updateEpicStatus(task.getSuperTask());
-        }
-    }
+    public void editSubTask(Long id, SubTask task);
 
     /**
      * @remove the Common task by id
      */
-    public void removeCommonTask(Long id) {
-        if (this.tasks.get(id) instanceof CommonTask) {
-            this.tasks.remove(id);
-        }
-    }
+    public void removeCommonTask(Long id);
 
     /**
      * @remove the Epic task by id
      */
-    public void removeEpicTask(Long id) {
-        if (this.tasks.get(id) instanceof EpicTask) {
-            ArrayList<Long> subTasks = ((EpicTask) this.tasks.get(id)).getSubTasks();
-            this.tasks.remove(id);
-            for (Long subTask : subTasks) {
-                this.tasks.remove(subTask);
-            }
-        }
-    }
+    public void removeEpicTask(Long id);
 
     /**
      * @remove the Sub task by id
      */
-    public void removeSubTask(Long id) {
-        if (this.tasks.get(id) instanceof SubTask) {
-            Long superTaskId = ((SubTask) this.tasks.get(id)).getSuperTask();
-            this.tasks.remove(id);
-            ((EpicTask) this.tasks.get(superTaskId)).getSubTasks()
-                    .remove(((EpicTask) this.tasks.get(superTaskId)).getSubTasks().indexOf(id));
-            this.updateEpicStatus(superTaskId);
-        }
-    }
+    public void removeSubTask(Long id);
 
     /**
      * @return the epic task subtasks by id
      */
-    public ArrayList<Long> getEpicSubTasks(Long id) {
-        ArrayList<Long> subTasks = new ArrayList<>();
-        if (this.tasks.get(id) instanceof EpicTask) {
-            subTasks = ((EpicTask) this.tasks.get(id)).getSubTasks();
-        }
-        return subTasks;
-    }
-
-    /**
-     * @update epic task status by id
-     */
-    private void updateEpicStatus(Long id) {
-
-        ArrayList<String> statuses = new ArrayList<>();
-
-        // Создание ряда данных с подзадачами
-        for (Long task : this.tasks.keySet()) {
-            if (this.tasks.get(task) instanceof SubTask) {
-                if (((SubTask) this.tasks.get(task)).getSuperTask().equals(id)) {
-                    statuses.add(this.tasks.get(task).getStatus());
-                }
-            }
-        }
-
-        // Логика выбора статуса
-        if (statuses.isEmpty() || !statuses.contains("IN_PROGRESS") && !statuses.contains("DONE")) {
-            this.tasks.get(id).setStatus("NEW");
-        } else if (!statuses.contains("NEW") && !statuses.contains("IN_PROGRESS")) {
-            this.tasks.get(id).setStatus("DONE");
-        } else {
-            this.tasks.get(id).setStatus("IN_PROGRESS");
-        }
-    }
+    public ArrayList<Long> getEpicSubTasks(Long id);
 
     /**
      * @put new Common task to the tasks
      */
-    public Long createCommonTask(CommonTask task) {
-        Long newId = null;
-        if (task instanceof CommonTask) {
-            Random random = new Random();
-            newId = Math.abs(random.nextLong());
-            while (this.tasks.containsKey(newId)) {
-                newId = random.nextLong();
-            }
-            this.tasks.put(newId, task);
-        }
-        return newId;
-    }
+    public Long createCommonTask(CommonTask task);
 
     /**
      * @put new Epic task to the tasks
      */
-    public Long createEpicTask(EpicTask task) {
-        Long newId = null;
-        if (task instanceof EpicTask) {
-            Random random = new Random();
-            newId = Math.abs(random.nextLong());
-            while (this.tasks.containsKey(newId)) {
-                newId = random.nextLong();
-            }
-            this.tasks.put(newId, task);
-        }
-        return newId;
-    }
+    public Long createEpicTask(EpicTask task);
 
     /**
      * @put new Sub task to the tasks
      */
-    public Long createSubTask(SubTask task) {
-        Long newId = null;
-        if (task instanceof SubTask) {
-            Random random = new Random();
-            newId = Math.abs(random.nextLong());
-            while (this.tasks.containsKey(newId)) {
-                newId = random.nextLong();
-            }
-            this.tasks.put(newId, task);
-            ArrayList<Long> subTasks = ((EpicTask) this.tasks.get(task.getSuperTask())).getSubTasks();
-            subTasks.add(newId);
-            ((EpicTask) this.tasks.get(task.getSuperTask())).setSubTasks(subTasks);
-            this.updateEpicStatus(task.getSuperTask());
-        }
-        return newId;
-    }
+    public Long createSubTask(SubTask task);
 
     /**
      * @return String of all tasks
      */
     @Override
-    public String toString() {
-        String result = "";
-        for (Long task : this.tasks.keySet()) {
-            result += this.taskToString(task) + ", ";
-        }
-        return result;
-    }
+    public String toString();
 
     /**
      * @return String of one tasks
      */
-    public String taskToString(Long id) {
-        return id + " " + this.tasks.get(id).toString();
-    }
+    public String taskToString(Long id);
 }

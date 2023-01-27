@@ -1,8 +1,11 @@
 package kanban.main;
 
-import kanban.manager.TaskManager;
+import kanban.manager.InMemoryHistoryManager;
+import kanban.manager.InMemoryTaskManager;
+import kanban.manager.Managers;
 import kanban.task.CommonTask;
 import kanban.task.EpicTask;
+import kanban.task.Status;
 import kanban.task.SubTask;
 import kanban.task.Task;
 
@@ -12,105 +15,115 @@ public class Main {
 
         System.out.println("Поехали!");
 
-        // Запуск менеджера задач
-        TaskManager manager = new TaskManager();
+        // Запуск менеджера задач (я не понял про getDefault())
+        InMemoryTaskManager    taskManager    = (InMemoryTaskManager)    Managers.getDefault();
+        InMemoryHistoryManager historyManager = (InMemoryHistoryManager) Managers.getDefaultHistory();
 
         // Создание объектов с внесением в массив задач: обычная задача 1
         CommonTask commonTask1 = new CommonTask.Builder().
-                setName("Тест имени таска 1").
+                setName       ("Тест имени таска 1").
                 setDescription("Тест описания таска 1").
-                setStatus("NEW").
+                setStatus     (Status.NEW).
                 build();
-        Long commonTaskId1 = manager.createCommonTask(commonTask1);
+        Long commonTaskId1 = taskManager.createCommonTask(commonTask1);
 
         // Создание объектов с внесением в массив задач: обычная задача 2
         CommonTask commonTask2 = new CommonTask.Builder().
-                setName("Тест имени таска 2").
+                setName       ("Тест имени таска 2").
                 setDescription("Тест описания таска 2").
-                setStatus("IN_PROGRESS").
+                setStatus     (Status.IN_PROGRESS).
                 build();
-        Long commonTaskId2 = manager.createCommonTask(commonTask1);
+        Long commonTaskId2 = taskManager.createCommonTask(commonTask1);
 
         // Создание объектов с внесением в массив задач: эпик 1. Обновление статуса
         // эпика
         EpicTask epicTask1 = new EpicTask.Builder().
-                setName("Тест имени эпика 1").
+                setName       ("Тест имени эпика 1").
                 setDescription("Тест описания эпика 1").
                 build();
-        Long epicId1 = manager.createEpicTask(epicTask1);
+        Long epicId1 = taskManager.createEpicTask(epicTask1);
 
         // Создание объектов с внесением в массив задач: эпик 2. Обновление статуса
         // эпика
         EpicTask epicTask2 = new EpicTask.Builder().
-                setName("Тест имени эпика 2").
+                setName       ("Тест имени эпика 2").
                 setDescription("Тест описания эпика 2").
                 build();
-        Long epicId2 = manager.createEpicTask(epicTask2);
+        Long epicId2 = taskManager.createEpicTask(epicTask2);
 
         // Создание объектов с внесением в массив задач: сабтаск 1
         SubTask subTask1 = new SubTask.Builder().
-                setName("Тест имени сабтаска 1").
+                setName       ("Тест имени сабтаска 1").
                 setDescription("Тест описания сабтаска 1").
-                setStatus("DONE").
-                setSuperTask(epicId1).
+                setStatus     (Status.DONE).
+                setSuperTask  (epicId1).
                 build();
-        @SuppressWarnings("unused")
-        Long subTaskId1 = manager.createSubTask(subTask1);
+        Long subTaskId1 = taskManager.createSubTask(subTask1);
 
         // Создание объектов с внесением в массив задач: сабтаск 2
         SubTask subTask2 = new SubTask.Builder().
-                setName("Тест имени сабтаска 2").
+                setName       ("Тест имени сабтаска 2").
                 setDescription("Тест описания сабтаска 2").
-                setStatus("NEW").
-                setSuperTask(epicId1).
+                setStatus     (Status.NEW).
+                setSuperTask  (epicId1).
                 build();
-        Long subTaskId2 = manager.createSubTask(subTask2);
+        Long subTaskId2 = taskManager.createSubTask(subTask2);
 
         // Создание объектов с внесением в массив задач: сабтаск 3
         SubTask subTask3 = new SubTask.Builder().
-                setName("Тест имени сабтаска 3").
+                setName       ("Тест имени сабтаска 3").
                 setDescription("Тест описания сабтаска 3").
-                setStatus("IN_PROGRESS").
-                setSuperTask(epicId2).
+                setStatus     (Status.IN_PROGRESS).
+                setSuperTask (epicId2).
                 build();
-        Long subTaskId3 = manager.createSubTask(subTask3);
+        Long subTaskId3 = taskManager.createSubTask(subTask3);
 
         // Проверка внесенных изменений
-        System.out.println(manager.toString());
+        System.out.println(taskManager.toString());
 
         // Изменение созданных задач и применение изменений к объектам в массиве
-        commonTask1.setStatus("IN_PROGRESS");
-        commonTask2.setStatus("DONE");
-        subTask2.setStatus("DONE");
-        subTask3.setStatus("DONE");
-        manager.editCommonTask(commonTaskId1, commonTask1);
-        manager.editCommonTask(commonTaskId2, commonTask2);
-        manager.editSubTask(subTaskId2, subTask2);
-        manager.editSubTask(subTaskId3, subTask3);
+        commonTask1.setStatus(Status.IN_PROGRESS);
+        commonTask2.setStatus(Status.DONE);
+        subTask2.   setStatus(Status.DONE);
+        subTask3.   setStatus(Status.DONE);
+        taskManager.editCommonTask(commonTaskId1, commonTask1);
+        taskManager.editCommonTask(commonTaskId2, commonTask2);
+        taskManager.editSubTask   (subTaskId2, subTask2);
+        taskManager.editSubTask   (subTaskId3, subTask3);
 
         // Проверка внесения изменений
-        System.out.println(manager.toString());
+        System.out.println(taskManager.toString());
+        
+        // Проверка вывода истории
+        taskManager.getCommonTask(commonTaskId1, historyManager);
+        taskManager.getCommonTask(commonTaskId2, historyManager);
+        taskManager.getEpicTask  (epicId1, historyManager);
+        taskManager.getEpicTask  (epicId2, historyManager);
+        taskManager.getSubTask   (subTaskId1, historyManager);
+        taskManager.getSubTask   (subTaskId2, historyManager);
+        taskManager.getSubTask   (subTaskId3, historyManager);
+        System.out.println("История: " + historyManager.getHistory().toString());
 
         // Проверка удаления задач по id
-        manager.removeCommonTask(commonTaskId1);
-        manager.removeEpicTask(epicId1);
+        taskManager.removeCommonTask(commonTaskId1);
+        taskManager.removeEpicTask(epicId1);
 
         // Проверка внесения изменений
-        System.out.println(manager.toString());
+        System.out.println(taskManager.toString());
 
         // Проверка отдельных методов получения списков задач
-        for (Task task : manager.getAllCommonTasks()) {
+        for (Task task : taskManager.getAllCommonTasks()) {
             System.out.println(task.toString());
         }
-        for (Task task : manager.getAllEpicTasks()) {
+        for (Task task : taskManager.getAllEpicTasks()) {
             System.out.println(task.toString());
         }
-        for (Task task : manager.getAllSubTasks()) {
+        for (Task task : taskManager.getAllSubTasks()) {
             System.out.println(task.toString());
         }
 
         // Проверка очистки выгрузки
-        manager.clearTasks();
-        System.out.println(manager.toString());
+        taskManager.clearTasks();
+        System.out.println(taskManager.toString());
     }
 }

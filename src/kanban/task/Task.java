@@ -4,7 +4,7 @@ public class Task {
 
     protected String name;
     protected String description;
-    protected String status;
+    protected Status status;
 
     /**
      * @param name the name to set
@@ -23,7 +23,7 @@ public class Task {
     /**
      * @param status the status to set
      */
-    public void setStatus(String status) {
+    public void setStatus(Status status) {
         this.status = status;
     }
 
@@ -44,7 +44,7 @@ public class Task {
     /**
      * @return the status
      */
-    public String getStatus() {
+    public Status getStatus() {
         return status;
     }
     
@@ -60,7 +60,7 @@ public class Task {
     public static class Builder<T extends Builder<T>> {
         private String name;
         private String description;
-        private String status;
+        private Status status;
 
         /**
          * @constructor
@@ -90,7 +90,7 @@ public class Task {
          * @param status the status to set
          */
         @SuppressWarnings("unchecked")
-        public T setStatus(String status) {
+        public T setStatus(Status status) {
             this.status = status;
             return (T) this;
         }
