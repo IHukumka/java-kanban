@@ -6,7 +6,8 @@ import kanban.task.Task;
 
 public class InMemoryHistoryManager implements HistoryManager {
 
-    private ArrayList<Task> history;
+    private final ArrayList<Task> history;
+    private static final short LIMIT = 10;
     
     public InMemoryHistoryManager() {
         this.history = new ArrayList<>();
@@ -18,7 +19,7 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     public ArrayList<Task> getHistory() {
         ArrayList<Task> historyOuttake = new ArrayList<>();
-        for (int i = 0; i < 10 && i < this.history.size(); i ++) {
+        for (short i = 0; i < LIMIT && i < this.history.size(); i ++) {
             historyOuttake.add(history.get(i));
         }
         return historyOuttake;

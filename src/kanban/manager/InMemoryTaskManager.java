@@ -12,25 +12,22 @@ import kanban.task.Task;
 
 public class InMemoryTaskManager implements TaskManager {
     
-    private HashMap<Long, Task> tasks;
+    private final HashMap<Long, Task> tasks;
+    private final HistoryManager historyManager;
     
     /**
      * @constructor
      */
     public InMemoryTaskManager() {
         this.tasks = new HashMap<>();
-        
+        this.historyManager = Managers.getDefaultHistory();
     }
 
     /**
      * @return all the tasks
      */
     public ArrayList<Task> getAllTasks() {
-        ArrayList<Task> allTasks = new ArrayList<>();
-        for (Task task : tasks.values()) {
-            allTasks.add(task);
-        }
-        return allTasks;
+        return new ArrayList<>(tasks.values());
     }
 
     /**
@@ -115,11 +112,11 @@ public class InMemoryTaskManager implements TaskManager {
     /**
      * @return the Common task by id
      */
-    public CommonTask getCommonTask(Long id, InMemoryHistoryManager historyManager) {
+    public CommonTask getCommonTask(Long id) {
         CommonTask task = new CommonTask.Builder().build();
         if (tasks.get(id) instanceof CommonTask) {
             task = (CommonTask) this.tasks.get(id);
-            historyManager.add(task);
+            this.historyManager.add(task);
         }
         return task;
     }
@@ -127,11 +124,11 @@ public class InMemoryTaskManager implements TaskManager {
     /**
      * @return the Epic task by id
      */
-    public EpicTask getEpicTask(Long id, InMemoryHistoryManager historyManager) {
+    public EpicTask getEpicTask(Long id) {
         EpicTask task = new EpicTask.Builder().build();
         if (tasks.get(id) instanceof EpicTask) {
             task = (EpicTask) this.tasks.get(id);
-            historyManager.add(task);
+            this.historyManager.add(task);
         }
         return task;
     }
@@ -139,11 +136,11 @@ public class InMemoryTaskManager implements TaskManager {
     /**
      * @return the Sub task by id
      */
-    public SubTask getSubTask(Long id, InMemoryHistoryManager historyManager) {
+    public SubTask getSubTask(Long id) {
         SubTask task = new SubTask.Builder().build();
         if (tasks.get(id) instanceof SubTask) {
             task = (SubTask) this.tasks.get(id);
-            historyManager.add(task);
+            this.historyManager.add(task);;
         }
         return task;
     }
@@ -317,5 +314,9 @@ public class InMemoryTaskManager implements TaskManager {
      */
     public String taskToString(Long id) {
         return id + " " + this.tasks.get(id).toString();
+    }
+    
+    public HistoryManager getHistoryManager() {
+        return historyManager;
     }
 }

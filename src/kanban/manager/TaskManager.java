@@ -55,17 +55,17 @@ public interface TaskManager {
     /**
      * @return the Common task by id
      */
-    public CommonTask getCommonTask(Long id, InMemoryHistoryManager historyManager);
+    public CommonTask getCommonTask(Long id);
 
     /**
      * @return the Epic task by id
      */
-    public EpicTask getEpicTask(Long id, InMemoryHistoryManager historyManager);
+    public EpicTask getEpicTask(Long id);
 
     /**
      * @return the Sub task by id
      */
-    public SubTask getSubTask(Long id, InMemoryHistoryManager historyManager);
+    public SubTask getSubTask(Long id);
 
     /**
      * @edit the Common task by id
@@ -127,4 +127,6 @@ public interface TaskManager {
      * @return String of one tasks
      */
     public String taskToString(Long id);
+    
+    public HistoryManager getHistoryManager();
 }

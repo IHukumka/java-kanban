@@ -1,8 +1,7 @@
 package kanban.main;
 
-import kanban.manager.InMemoryHistoryManager;
-import kanban.manager.InMemoryTaskManager;
 import kanban.manager.Managers;
+import kanban.manager.TaskManager;
 import kanban.task.CommonTask;
 import kanban.task.EpicTask;
 import kanban.task.Status;
@@ -15,9 +14,8 @@ public class Main {
 
         System.out.println("Поехали!");
 
-        // Запуск менеджера задач (я не понял про getDefault())
-        InMemoryTaskManager    taskManager    = (InMemoryTaskManager)    Managers.getDefault();
-        InMemoryHistoryManager historyManager = (InMemoryHistoryManager) Managers.getDefaultHistory();
+        // Запуск менеджера задач (понял, красиво)
+        TaskManager taskManager = Managers.getDefault();
 
         // Создание объектов с внесением в массив задач: обычная задача 1
         CommonTask commonTask1 = new CommonTask.Builder().
@@ -94,15 +92,15 @@ public class Main {
         // Проверка внесения изменений
         System.out.println(taskManager.toString());
         
-        // Проверка вывода истории
-        taskManager.getCommonTask(commonTaskId1, historyManager);
-        taskManager.getCommonTask(commonTaskId2, historyManager);
-        taskManager.getEpicTask  (epicId1, historyManager);
-        taskManager.getEpicTask  (epicId2, historyManager);
-        taskManager.getSubTask   (subTaskId1, historyManager);
-        taskManager.getSubTask   (subTaskId2, historyManager);
-        taskManager.getSubTask   (subTaskId3, historyManager);
-        System.out.println("История: " + historyManager.getHistory().toString());
+        // Проверка вывода истории (исправил методы, но, кажется, криво)
+        taskManager.getCommonTask(commonTaskId1);
+        taskManager.getCommonTask(commonTaskId2);
+        taskManager.getEpicTask  (epicId1);
+        taskManager.getEpicTask  (epicId2);
+        taskManager.getSubTask   (subTaskId1);
+        taskManager.getSubTask   (subTaskId2);
+        taskManager.getSubTask   (subTaskId3);
+        System.out.println("История: " + taskManager.getHistoryManager().getHistory().toString());
 
         // Проверка удаления задач по id
         taskManager.removeCommonTask(commonTaskId1);
