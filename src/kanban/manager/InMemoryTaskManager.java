@@ -1,5 +1,6 @@
 package kanban.manager;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -11,10 +12,10 @@ import kanban.task.SubTask;
 import kanban.task.Task;
 
 public class InMemoryTaskManager implements TaskManager {
-    
+
     private final HashMap<Long, Task> tasks;
     private final HistoryManager historyManager;
-    
+
     /**
      * @constructor
      */
@@ -116,6 +117,8 @@ public class InMemoryTaskManager implements TaskManager {
         CommonTask task = new CommonTask.Builder().build();
         if (tasks.get(id) instanceof CommonTask) {
             task = (CommonTask) this.tasks.get(id);
+            task.setCallTime(LocalDateTime.now());
+            this.editCommonTask(id, task);
             this.historyManager.add(task);
         }
         return task;
@@ -128,6 +131,8 @@ public class InMemoryTaskManager implements TaskManager {
         EpicTask task = new EpicTask.Builder().build();
         if (tasks.get(id) instanceof EpicTask) {
             task = (EpicTask) this.tasks.get(id);
+            task.setCallTime(LocalDateTime.now());
+            this.editEpicTask(id, task);
             this.historyManager.add(task);
         }
         return task;
@@ -140,7 +145,10 @@ public class InMemoryTaskManager implements TaskManager {
         SubTask task = new SubTask.Builder().build();
         if (tasks.get(id) instanceof SubTask) {
             task = (SubTask) this.tasks.get(id);
-            this.historyManager.add(task);;
+            task.setCallTime(LocalDateTime.now());
+            this.editSubTask(id, task);
+            this.historyManager.add(task);
+            ;
         }
         return task;
     }
@@ -179,6 +187,7 @@ public class InMemoryTaskManager implements TaskManager {
     public void removeCommonTask(Long id) {
         if (this.tasks.get(id) instanceof CommonTask) {
             this.tasks.remove(id);
+            this.historyManager.remove(id);
         }
     }
 
@@ -189,8 +198,10 @@ public class InMemoryTaskManager implements TaskManager {
         if (this.tasks.get(id) instanceof EpicTask) {
             ArrayList<Long> subTasks = ((EpicTask) this.tasks.get(id)).getSubTasks();
             this.tasks.remove(id);
+            this.historyManager.remove(id);
             for (Long subTask : subTasks) {
                 this.tasks.remove(subTask);
+                this.historyManager.remove(subTask);
             }
         }
     }
@@ -202,6 +213,7 @@ public class InMemoryTaskManager implements TaskManager {
         if (this.tasks.get(id) instanceof SubTask) {
             Long superTaskId = ((SubTask) this.tasks.get(id)).getSuperTask();
             this.tasks.remove(id);
+            this.historyManager.remove(id);
             ((EpicTask) this.tasks.get(superTaskId)).getSubTasks()
                     .remove(((EpicTask) this.tasks.get(superTaskId)).getSubTasks().indexOf(id));
             this.updateEpicStatus(superTaskId);
@@ -256,6 +268,7 @@ public class InMemoryTaskManager implements TaskManager {
             while (this.tasks.containsKey(newId)) {
                 newId = random.nextLong();
             }
+            task.setId(newId);
             this.tasks.put(newId, task);
         }
         return newId;
@@ -272,6 +285,7 @@ public class InMemoryTaskManager implements TaskManager {
             while (this.tasks.containsKey(newId)) {
                 newId = random.nextLong();
             }
+            task.setId(newId);
             this.tasks.put(newId, task);
         }
         return newId;
@@ -288,6 +302,7 @@ public class InMemoryTaskManager implements TaskManager {
             while (this.tasks.containsKey(newId)) {
                 newId = random.nextLong();
             }
+            task.setId(newId);
             this.tasks.put(newId, task);
             ArrayList<Long> subTasks = ((EpicTask) this.tasks.get(task.getSuperTask())).getSubTasks();
             subTasks.add(newId);
@@ -304,18 +319,11 @@ public class InMemoryTaskManager implements TaskManager {
     public String toString() {
         String result = "";
         for (Long task : this.tasks.keySet()) {
-            result += this.taskToString(task) + ", ";
+            result += task.toString() + ", ";
         }
         return result;
     }
 
-    /**
-     * @return String of one tasks
-     */
-    public String taskToString(Long id) {
-        return id + " " + this.tasks.get(id).toString();
-    }
-    
     public HistoryManager getHistoryManager() {
         return historyManager;
     }

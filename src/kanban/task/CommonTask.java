@@ -1,5 +1,7 @@
 package kanban.task;
 
+import java.time.format.DateTimeFormatter;
+
 public class CommonTask extends Task {
 
     public CommonTask(CommonTask.Builder builder) {
@@ -25,6 +27,12 @@ public class CommonTask extends Task {
 
     @Override
     public String toString() {
-        return "CommonTask [name=" + name + ", description=" + description + ", status=" + status + "]";
+        DateTimeFormatter dTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return "CommonTask [id = " + id + 
+                ", name=" + name + 
+                ", description=" + description + 
+                ", status=" + status + 
+                ", callTime=" + dTF.format(callTime) + 
+                "]";
     }
 }

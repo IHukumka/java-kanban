@@ -1,5 +1,7 @@
 package kanban.task;
 
+import java.time.format.DateTimeFormatter;
+
 public class SubTask extends Task {
 
     private Long superTask;
@@ -49,8 +51,14 @@ public class SubTask extends Task {
 
     @Override
     public String toString() {
-        return "SubTask [name=" + name + ", description=" + description + ", status=" + status + ", superTask="
-                + superTask + "]";
+        DateTimeFormatter dTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return "SubTask    [id = " + id + 
+                ", name=" + name + 
+                ", description=" + description +
+                ", status=" + status + 
+                ", callTime=" + dTF.format(callTime) + 
+                ", superTask=" + superTask + 
+                "]";
     }
 
 }

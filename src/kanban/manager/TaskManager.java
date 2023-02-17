@@ -123,10 +123,5 @@ public interface TaskManager {
     @Override
     public String toString();
 
-    /**
-     * @return String of one tasks
-     */
-    public String taskToString(Long id);
-    
     public HistoryManager getHistoryManager();
 }

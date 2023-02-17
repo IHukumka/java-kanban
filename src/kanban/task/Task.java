@@ -1,10 +1,28 @@
 package kanban.task;
 
-public class Task {
+import java.time.LocalDateTime;
 
+public class Task implements Comparable<Task> {
+
+    protected Long id;
     protected String name;
     protected String description;
     protected Status status;
+    protected LocalDateTime callTime;
+
+    /**
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     /**
      * @param name the name to set
@@ -47,7 +65,29 @@ public class Task {
     public Status getStatus() {
         return status;
     }
-    
+
+    /**
+     * @return the callTime
+     */
+    public LocalDateTime getCallTime() {
+        return callTime;
+    }
+
+    /**
+     * @param callTime the callTime to set
+     */
+    public void setCallTime(LocalDateTime callTime) {
+        this.callTime = callTime;
+    }
+
+    /**
+     * @return the comparison based on callTime
+     */
+    @Override
+    public int compareTo(Task task) {
+        return this.getCallTime().compareTo(task.getCallTime());
+    }
+
     /**
      * @constructor
      */
@@ -55,6 +95,8 @@ public class Task {
         this.name = builder.name;
         this.description = builder.description;
         this.status = builder.status;
+        this.callTime = LocalDateTime.now();
+        this.id = 0L;
     }
 
     public static class Builder<T extends Builder<T>> {

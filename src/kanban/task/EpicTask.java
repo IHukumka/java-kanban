@@ -1,5 +1,6 @@
 package kanban.task;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class EpicTask extends Task {
@@ -19,7 +20,7 @@ public class EpicTask extends Task {
     public void setSubTasks(ArrayList<Long> subTasks) {
         this.subTasks = subTasks;
     }
-    
+
     /**
      * @constructor
      */
@@ -37,7 +38,7 @@ public class EpicTask extends Task {
          */
         public Builder() {
         }
-        
+
         /**
          * @build EpicTask
          */
@@ -49,8 +50,14 @@ public class EpicTask extends Task {
 
     @Override
     public String toString() {
-        return "EpicTask [name=" + name + ", description=" + description + ", status=" + status + ", subTasks="
-                + subTasks + "]";
+        DateTimeFormatter dTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return "EpicTask   [id = " + id + 
+                ", name=" + name + 
+                ", description=" + description + 
+                ", status=" + status + 
+                ", callTime=" + dTF.format(callTime) + 
+                ", subTasks=" + subTasks + 
+                "]";
     }
 
 }
