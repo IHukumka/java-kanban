@@ -38,7 +38,6 @@ public class InMemoryHistoryManager implements HistoryManager {
     /**
      * @get the list of tasks in memory
      */
-    @SuppressWarnings("unchecked")
     public ArrayList<Task> getHistory() {
         return history.toArrayList();
     }

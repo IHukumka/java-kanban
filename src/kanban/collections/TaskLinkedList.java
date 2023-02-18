@@ -11,7 +11,7 @@ public final class TaskLinkedList<Task> {
     public CustomNode<Task> head;
     public CustomNode<Task> tail;
     private int size = 0;
-    private HashMap<Long, CustomNode> nodes;
+    private HashMap<Long, CustomNode<Task>> nodes;
     
     /**
      * @constructor
@@ -48,7 +48,7 @@ public final class TaskLinkedList<Task> {
     /**
      * @return the ArrayList of tasks in the list
      */
-    public ArrayList toArrayList() {
+    public ArrayList<Task> toArrayList() {
         ArrayList<Task> result = new ArrayList<>();
         for (CustomNode<Task> x = this.head; x != null; x = x.next) {
             result.add(x.data);
@@ -63,7 +63,7 @@ public final class TaskLinkedList<Task> {
         CustomNode<Task> last = tail;
         CustomNode<Task> newNode = new CustomNode<Task>(last, task, null);
         Long id = ((kanban.task.Task) task).getId();
-        boolean contains = this.nodes.keySet().contains(id);
+        boolean contains = this.nodes.containsKey(id);
         if (contains) {
             this.remove(id);
         }
@@ -84,7 +84,7 @@ public final class TaskLinkedList<Task> {
         CustomNode<Task> first = this.head;
         CustomNode<Task> newNode = new CustomNode<>(task);
         Long id = ((kanban.task.Task) task).getId();
-        if (this.nodes.keySet().contains(id)) {
+        if (this.nodes.containsKey(id)) {
             this.remove(id);
         }
         if (this.head == null) {
