@@ -2,8 +2,27 @@ package kanban.task;
 
 import java.time.LocalDateTime;
 
-public class Task implements Comparable<Task> {
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
+@JsonDeserialize(builder = Task.Builder.class)
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME, 
+        include = JsonTypeInfo.As.PROPERTY, 
+        property = "type")
+      @JsonSubTypes({ 
+        @Type(value = CommonTask.class, name = "kanban.task.CommonTask"), 
+        @Type(value = EpicTask.class, name = "kanban.task.EpicTask"),
+        @Type(value = SubTask.class, name = "kanban.task.SubTask")
+      })
+public class Task implements Comparable<Task> {
+    
+    @JsonProperty
+    protected Class<? extends Task> type;
     protected Long id;
     protected String name;
     protected String description;
@@ -92,23 +111,61 @@ public class Task implements Comparable<Task> {
      * @constructor
      */
     public Task(Task.Builder<?> builder) {
+        this.type = this.getClass();
         this.name = builder.name;
         this.description = builder.description;
         this.status = builder.status;
         this.callTime = LocalDateTime.now();
-        this.id = 0L;
+        this.id = builder.id;
     }
-
+    
+    @JsonPOJOBuilder(withPrefix = "set")
     public static class Builder<T extends Builder<T>> {
-        private String name;
-        private String description;
-        private Status status;
+        protected Long id;
+        protected String name;
+        protected String description;
+        protected Status status;
+        protected LocalDateTime callTime;
+        
 
         /**
          * @constructor
          */
         public Builder() {
         }
+        
+        /**
+         * @return the id
+         */
+        public Long getId() {
+            return id;
+        }
+
+        /**
+         * @param id the id to set
+         */
+        @SuppressWarnings("unchecked")
+        public T setId(Long id) {
+            this.id = id;
+            return (T) this;
+        }
+
+        /**
+         * @return the callTime
+         */
+        public LocalDateTime getCallTime() {
+            return callTime;
+        }
+
+        /**
+         * @param callTime the callTime to set
+         */
+        @SuppressWarnings("unchecked")
+        public T setCallTime(LocalDateTime callTime) {
+            this.callTime = callTime;
+            return (T) this;
+        }
+
 
         /**
          * @param name the name to set

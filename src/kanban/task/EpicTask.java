@@ -3,6 +3,21 @@ package kanban.task;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+
+@JsonDeserialize(builder = EpicTask.Builder.class)
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME, 
+        include = JsonTypeInfo.As.PROPERTY, 
+        property = "type",
+        defaultImpl = EpicTask.class)
+      @JsonSubTypes({ 
+        @Type(value = EpicTask.class, name = "kanban.task.EpicTask"), 
+        })
 public class EpicTask extends Task {
 
     private ArrayList<Long> subTasks;
@@ -28,7 +43,8 @@ public class EpicTask extends Task {
         super(builder);
         this.subTasks = new ArrayList<>();
     }
-
+    
+    @JsonPOJOBuilder(buildMethodName = "build",withPrefix = "set")
     public static class Builder extends Task.Builder<Builder> {
 
         ArrayList<Long> subTasks;
@@ -37,6 +53,13 @@ public class EpicTask extends Task {
          * @constructor
          */
         public Builder() {
+        }
+        
+        /**
+         * @param subTasks the subTasks to set
+         */
+        public void setSubTasks(ArrayList<Long> subTasks) {
+            this.subTasks = subTasks;
         }
 
         /**

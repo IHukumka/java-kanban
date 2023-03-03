@@ -1,12 +1,14 @@
 package kanban.tests;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 import kanban.task.CommonTask;
 import kanban.task.EpicTask;
 import kanban.task.Status;
 import kanban.task.SubTask;
+import kanban.task.Task;
 
 public abstract class TaskGenerator {
 

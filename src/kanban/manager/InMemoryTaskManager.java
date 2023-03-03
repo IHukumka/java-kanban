@@ -13,7 +13,7 @@ import kanban.task.Task;
 
 public class InMemoryTaskManager implements TaskManager {
 
-    private final HashMap<Long, Task> tasks;
+    protected final HashMap<Long, Task> tasks;
     private final HistoryManager historyManager;
 
     /**
@@ -318,8 +318,8 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public String toString() {
         String result = "";
-        for (Long task : this.tasks.keySet()) {
-            result += task.toString() + ", ";
+        for (Task task : this.tasks.values()) {
+            result += task.toString() + "\n";
         }
         return result;
     }

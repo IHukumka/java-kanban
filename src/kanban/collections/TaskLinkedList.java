@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 import kanban.task.Task;
 
-@SuppressWarnings({ "rawtypes", "hiding" })
+@SuppressWarnings({ "hiding" })
 public final class TaskLinkedList<Task> {
 
     public CustomNode<Task> head;
@@ -30,7 +30,6 @@ public final class TaskLinkedList<Task> {
     /**
      * @remove task from the chain by id
      */
-    @SuppressWarnings("unchecked")
     public void remove(Long id) {
         if (nodes.containsKey(id)) {
             CustomNode<Task> node = this.nodes.get(id);

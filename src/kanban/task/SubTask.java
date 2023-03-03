@@ -2,6 +2,21 @@ package kanban.task;
 
 import java.time.format.DateTimeFormatter;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+
+@JsonDeserialize(builder = SubTask.Builder.class)
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME, 
+        include = JsonTypeInfo.As.PROPERTY, 
+        property = "type",
+        defaultImpl = SubTask.class)
+      @JsonSubTypes({ 
+        @Type(value = SubTask.class, name = "kanban.task.SubTask"), 
+        })
 public class SubTask extends Task {
 
     private Long superTask;
@@ -24,7 +39,8 @@ public class SubTask extends Task {
         super(builder);
         this.superTask = builder.superTask;
     }
-
+    
+    @JsonPOJOBuilder(buildMethodName = "build",withPrefix = "set")
     public static class Builder extends Task.Builder<Builder> {
 
         Long superTask;
