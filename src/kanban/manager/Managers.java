@@ -1,5 +1,7 @@
 package kanban.manager;
 
+import java.io.File;
+
 public abstract class Managers {
 
     public static TaskManager getDefault() {
@@ -10,7 +12,7 @@ public abstract class Managers {
         return new InMemoryHistoryManager();
     }
     
-    public static TaskManager getFileBackedManager() {
-        return new FileBackedTaskManager();
+    public static TaskManager getFileBackedManager(File file) {
+        return FileBackedTaskManager.loadFromFile(file);
     }
 }

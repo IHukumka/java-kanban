@@ -1,9 +1,7 @@
 package kanban.exceptions;
 
-import java.io.IOException;
-
 @SuppressWarnings("serial")
-public final class ManagerSaveException extends IOException {
+public final class ManagerSaveException extends RuntimeException {
     public ManagerSaveException() {
         super();
     }
