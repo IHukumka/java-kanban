@@ -13,19 +13,15 @@ import kanban.tests.TaskGenerator;
 import java.io.File;
 import java.io.IOException;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
 
 public class FileBackedTaskManager extends InMemoryTaskManager  {
     
@@ -35,6 +31,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
     public static void main(String[] args) {
     	// Запуск программы. Инициализация менеджера задач.
     	File file = new File(saveFile);
+    	Random r = new Random();
         TaskManager taskManager = Managers.getFileBackedManager(file);
         System.out.println(taskManager.toString());
 
@@ -64,22 +61,34 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
         }
         
         // Запрос задач для заполнения истории
-        taskManager.getAllEpicTasks();
-        taskManager.getAllCommonTasks();
+        for (int i = 0; i < 1; i++) {
+            for (int x = 0; x < 3; x++) {
+                taskManager.getCommonTask(commonTasksIds.get(r.nextInt(commonTasksIds.size())));
+                taskManager.getEpicTask(epicTasksIds.get(r.nextInt(epicTasksIds.size())));
+                taskManager.getSubTask(subTasksIds.get(r.nextInt(subTasksIds.size())));
+            }
+        }
 
         //Контрольное отображение истории
         System.out.println(taskManager.toString());
+        System.out.println("История:");
+        taskManager.getHistoryManager().printHistory();
         
         // Создание нового менеджера, проверка загрузки данных из файла
         FileBackedTaskManager testManager = FileBackedTaskManager.loadFromFile(file);
         System.out.println(testManager.toString());
+        System.out.println("Загруженная история:");
+        taskManager.getHistoryManager().printHistory();
         
     }
     
-    public FileBackedTaskManager(HashMap<Long,Task> loadedTasks) {
+    public FileBackedTaskManager(HashMap<Long,Task> loadedTasks, ArrayList<Task> loadedHistory) {
         super();
         for (Task task:loadedTasks.values()){
         	this.tasks.put(task.getId(),task);
+        }
+        for (Task task:loadedHistory) {
+            this.historyManager.add(task);
         }
     }
     
@@ -87,11 +96,13 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
         
         File file = new File(saveFile);
         ArrayList<Task> tasksToSave = this.getAllTasks();
-
+        ArrayList<Task> historyToSave = this.getHistoryManager().getHistory();
+        ArrayList<ArrayList<Task>> dataToSave = 
+                new ArrayList<ArrayList<Task>>(List.of(tasksToSave, historyToSave));
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new JavaTimeModule());
-            mapper.writeValue(file, tasksToSave);
+            mapper.writeValue(file, dataToSave);
             System.out.println("Данные сохранены!");
         }catch (IOException e) { 
             throw new ManagerSaveException("Ошибка записи данных в файл: " + saveFile);
@@ -101,22 +112,37 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
     public static FileBackedTaskManager loadFromFile(File file) {
         
     	HashMap<Long,Task> loadedTasks = new HashMap<>();
+    	ArrayList<Task> loadedHistory = new ArrayList<>();
 
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
             mapper.readerFor(Task.class);
             mapper.registerModule(new JavaTimeModule());
-            TypeReference<ArrayList<Task>> typeRef = new TypeReference<ArrayList<Task>>() {};
-            for (Task task:mapper.readValue(file,typeRef)) {
-                loadedTasks.put(task.getId(), task);
+            TypeReference<ArrayList<ArrayList<Task>>> typeRef = 
+                    new TypeReference<ArrayList<ArrayList<Task>>>() {};
+            int i = 0;        
+            for(ArrayList<Task> taskList:mapper.readValue(file,typeRef)) {
+                if (i == 0) {
+                    
+                    for (Task task:taskList) {
+                        loadedTasks.put(task.getId(), task);
+                    }
+                    i++;
+                } else if (i == 1) {
+                    for (Task task:taskList) {
+                        loadedHistory.add(task);
+                    }
+                } else {
+                    break;
+                }
             }
             System.out.println("Данные загружены!");
         }catch (IOException e) {
             System.out.println("Ошибка загрузки данных!");
             e.printStackTrace();
         }
-        return new FileBackedTaskManager(loadedTasks);
+        return new FileBackedTaskManager(loadedTasks,loadedHistory);
     }
     
     @Override
@@ -198,19 +224,5 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
         Long newTask = super.createSubTask(task);
         this.save();
         return newTask;
-    }
-    
-    public static class LongSerializer extends JsonSerializer<Long> {
-        @Override
-        public void serialize(Long value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeString(value.toString());
-        }
-    }
-
-    public static class LongDeserializer extends JsonDeserializer<Long> {
-        @Override
-        public Long deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            return p.getValueAsLong();
-        }
     }
 }

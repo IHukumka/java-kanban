@@ -14,7 +14,7 @@ import kanban.task.Task;
 public class InMemoryTaskManager implements TaskManager {
 
     protected final HashMap<Long, Task> tasks;
-    private final HistoryManager historyManager;
+    protected final HistoryManager historyManager;
 
     /**
      * @constructor

@@ -7,7 +7,7 @@ import kanban.task.Task;
 
 @SuppressWarnings({ "hiding" })
 public final class TaskLinkedList<Task> {
-
+    
     public CustomNode<Task> head;
     public CustomNode<Task> tail;
     private int size = 0;
