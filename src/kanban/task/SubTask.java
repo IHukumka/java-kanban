@@ -74,6 +74,8 @@ public class SubTask extends Task {
                 ", status=" + status + 
                 ", callTime=" + dTF.format(callTime) + 
                 ", superTask=" + superTask + 
+                ", startTime=" + dTF.format(startTime) +
+                ", duration=" + duration.toMinutes() +
                 "]";
     }
 

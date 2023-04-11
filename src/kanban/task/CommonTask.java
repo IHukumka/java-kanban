@@ -48,6 +48,8 @@ public class CommonTask extends Task {
                 ", description=" + description + 
                 ", status=" + status + 
                 ", callTime=" + dTF.format(callTime) + 
+                ", startTime=" + dTF.format(startTime) +
+                ", duration=" + duration.toMinutes() +
                 "]";
     }
 }

@@ -1,7 +1,9 @@
 package kanban.manager;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.TreeSet;
 
 import kanban.task.CommonTask;
 import kanban.task.EpicTask;
@@ -124,4 +126,8 @@ public interface TaskManager {
     public String toString();
 
     public HistoryManager getHistoryManager();
+
+	public TreeSet<Task> getPrioritisedTasks();
+
+	public LocalDateTime getTaskEndTime(Long taskId);
 }

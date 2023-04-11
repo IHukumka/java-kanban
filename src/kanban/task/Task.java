@@ -1,6 +1,9 @@
 package kanban.task;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -28,6 +31,8 @@ public class Task implements Comparable<Task> {
     protected String description;
     protected Status status;
     protected LocalDateTime callTime;
+    protected LocalDateTime startTime;
+    protected Duration duration;
 
     /**
      * @return the id
@@ -99,7 +104,7 @@ public class Task implements Comparable<Task> {
         this.callTime = callTime;
     }
 
-    /**
+   	/**
      * @return the comparison based on callTime
      */
     @Override
@@ -108,6 +113,34 @@ public class Task implements Comparable<Task> {
     }
 
     /**
+	 * @return the startTime
+	 */
+	public LocalDateTime getStartTime() {
+		return startTime;
+	}
+
+	/**
+	 * @param startTime the startTime to set
+	 */
+	public void setStartTime(LocalDateTime startTime) {
+		this.startTime = startTime;
+	}
+
+	/**
+	 * @return the duration
+	 */
+	public Duration getDuration() {
+		return duration;
+	}
+
+	/**
+	 * @param duration the duration to set
+	 */
+	public void setDuration(Duration duration) {
+		this.duration = duration;
+	}
+
+	/**
      * @constructor
      */
     public Task(Task.Builder<?> builder) {
@@ -117,6 +150,8 @@ public class Task implements Comparable<Task> {
         this.status = builder.status;
         this.callTime = LocalDateTime.now();
         this.id = builder.id;
+        this.startTime = builder.startTime;
+        this.duration = builder.duration;
     }
     
     @JsonPOJOBuilder(withPrefix = "set")
@@ -126,6 +161,8 @@ public class Task implements Comparable<Task> {
         protected String description;
         protected Status status;
         protected LocalDateTime callTime;
+        protected LocalDateTime startTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(0), ZoneId.systemDefault());
+        protected Duration duration = Duration.ZERO;
         
 
         /**
@@ -194,7 +231,19 @@ public class Task implements Comparable<Task> {
             return (T) this;
         }
 
-        /**
+        @SuppressWarnings("unchecked")
+		public T setStartTime(LocalDateTime startTime) {
+			this.startTime = startTime;
+			return (T) this;
+		}
+
+		@SuppressWarnings("unchecked")
+		public T setDuration(Duration duration) {
+			this.duration = duration;
+			return (T) this;
+		}
+
+		/**
          * @build CommonTask
          */
         public Task build() {

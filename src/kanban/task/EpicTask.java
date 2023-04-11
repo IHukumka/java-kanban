@@ -80,6 +80,8 @@ public class EpicTask extends Task {
                 ", status=" + status + 
                 ", callTime=" + dTF.format(callTime) + 
                 ", subTasks=" + subTasks + 
+                ", startTime=" + dTF.format(startTime) +
+                ", duration=" + duration.toMinutes() +
                 "]";
     }
 

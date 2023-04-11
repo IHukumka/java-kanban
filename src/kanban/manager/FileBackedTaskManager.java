@@ -13,92 +13,50 @@ import kanban.tests.TaskGenerator;
 import java.io.File;
 import java.io.IOException;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
 
 public class FileBackedTaskManager extends InMemoryTaskManager  {
     
     public static final String saveFile = System.getProperty("user.dir")+"\\tasks.json";
-//    File file = new File(saveFile);
     
-    public static void main(String[] args) {
-    	// Запуск программы. Инициализация менеджера задач.
-    	File file = new File(saveFile);
-    	Random r = new Random();
-        TaskManager taskManager = Managers.getFileBackedManager(file);
-        System.out.println(taskManager.toString());
-
-        // Создание объектов с внесением в массив задач: обычные задачи.
-        ArrayList<CommonTask> commonTasks = TaskGenerator.generateCommonTasks(5);
-        ArrayList<Long> commonTasksIds = new ArrayList<>();
-        for (CommonTask task : commonTasks) {
-            Long commonTaskId = taskManager.createCommonTask(task);
-            commonTasksIds.add(commonTaskId);
-        }
-
-        // Создание объектов с внесением в массив задач: эпики.
-        ArrayList<EpicTask> epicTasks = TaskGenerator.generateEpicTasks(2);
-        ArrayList<Long> epicTasksIds = new ArrayList<>();
-        for (EpicTask task : epicTasks) {
-            Long epicId = taskManager.createEpicTask(task);
-            epicTasksIds.add(epicId);
-        }
-        
-
-        // Создание объектов с внесением в массив задач: сабтаски.
-        ArrayList<SubTask> subTasks = TaskGenerator.generateSubTasks(7, epicTasksIds);
-        ArrayList<Long> subTasksIds = new ArrayList<>();
-        for (SubTask task : subTasks) {
-            Long subTaskId = taskManager.createSubTask(task);
-            subTasksIds.add(subTaskId);
-        }
-        
-        // Запрос задач для заполнения истории
-        for (int i = 0; i < 1; i++) {
-            for (int x = 0; x < 3; x++) {
-                taskManager.getCommonTask(commonTasksIds.get(r.nextInt(commonTasksIds.size())));
-                taskManager.getEpicTask(epicTasksIds.get(r.nextInt(epicTasksIds.size())));
-                taskManager.getSubTask(subTasksIds.get(r.nextInt(subTasksIds.size())));
+    public FileBackedTaskManager(ArrayList<Task>[] loadedData) {
+        super();
+        if (loadedData[0] != null){
+        	for (Task task:loadedData[0]) {
+            	this.tasks.put(task.getId(), task);
+            }
+            for (Task task:loadedData[1]) {
+            	this.historyManager.add(task);
+            }
+            for (Task task:loadedData[2]) {
+            	this.prioritisedTasks.add(task);
             }
         }
-
-        //Контрольное отображение истории
-        System.out.println(taskManager.toString());
-        System.out.println("История:");
-        taskManager.getHistoryManager().printHistory();
-        
-        // Создание нового менеджера, проверка загрузки данных из файла
-        FileBackedTaskManager testManager = FileBackedTaskManager.loadFromFile(file);
-        System.out.println(testManager.toString());
-        System.out.println("Загруженная история:");
-        taskManager.getHistoryManager().printHistory();
-        
     }
     
-    public FileBackedTaskManager(HashMap<Long,Task> loadedTasks, ArrayList<Task> loadedHistory) {
-        super();
-        for (Task task:loadedTasks.values()){
-        	this.tasks.put(task.getId(),task);
-        }
-        for (Task task:loadedHistory) {
-            this.historyManager.add(task);
-        }
-    }
     
-    public void save() {
-        
+	public void save() {
+		
         File file = new File(saveFile);
-        ArrayList<Task> tasksToSave = this.getAllTasks();
-        ArrayList<Task> historyToSave = this.getHistoryManager().getHistory();
-        ArrayList<ArrayList<Task>> dataToSave = 
-                new ArrayList<ArrayList<Task>>(List.of(tasksToSave, historyToSave));
+        @SuppressWarnings("unchecked")
+        ArrayList<Task>[] dataToSave = new ArrayList[3];
+        dataToSave[0] = this.getAllTasks();
+        dataToSave[1] = this.getHistoryManager().getHistory();
+        for(Task task:this.prioritisedTasks) {
+        	dataToSave[2].add(task);
+        }
+        
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new JavaTimeModule());
@@ -111,38 +69,25 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
     
     public static FileBackedTaskManager loadFromFile(File file) {
         
-    	HashMap<Long,Task> loadedTasks = new HashMap<>();
-    	ArrayList<Task> loadedHistory = new ArrayList<>();
+    	@SuppressWarnings("unchecked")
+		ArrayList<Task>[] loadedData = new ArrayList[3];
 
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
             mapper.readerFor(Task.class);
             mapper.registerModule(new JavaTimeModule());
-            TypeReference<ArrayList<ArrayList<Task>>> typeRef = 
-                    new TypeReference<ArrayList<ArrayList<Task>>>() {};
-            int i = 0;        
-            for(ArrayList<Task> taskList:mapper.readValue(file,typeRef)) {
-                if (i == 0) {
-                    
-                    for (Task task:taskList) {
-                        loadedTasks.put(task.getId(), task);
-                    }
-                    i++;
-                } else if (i == 1) {
-                    for (Task task:taskList) {
-                        loadedHistory.add(task);
-                    }
-                } else {
-                    break;
-                }
-            }
+            TypeReference<ArrayList<Task>[]> typeRef = new TypeReference<ArrayList<Task>[]>() {};
+            
+            loadedData[0] = mapper.readValue(file,typeRef)[0];
+            loadedData[1] = mapper.readValue(file,typeRef)[1];
+            loadedData[2] = mapper.readValue(file,typeRef)[2];
             System.out.println("Данные загружены!");
-        }catch (IOException e) {
+        }catch (IOException|NullPointerException e) {
             System.out.println("Ошибка загрузки данных!");
             e.printStackTrace();
         }
-        return new FileBackedTaskManager(loadedTasks,loadedHistory);
+        return new FileBackedTaskManager(loadedData);
     }
     
     @Override
@@ -224,5 +169,19 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
         Long newTask = super.createSubTask(task);
         this.save();
         return newTask;
+    }
+    
+    public static class LongSerializer extends JsonSerializer<Long> {
+        @Override
+        public void serialize(Long value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeString(value.toString());
+        }
+    }
+
+    public static class LongDeserializer extends JsonDeserializer<Long> {
+        @Override
+        public Long deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            return p.getValueAsLong();
+        }
     }
 }

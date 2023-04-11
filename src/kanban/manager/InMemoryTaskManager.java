@@ -1,10 +1,14 @@
 package kanban.manager;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.TreeSet;
 
+import kanban.exceptions.TimeInputException;
 import kanban.task.CommonTask;
 import kanban.task.EpicTask;
 import kanban.task.Status;
@@ -15,6 +19,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     protected final HashMap<Long, Task> tasks;
     protected final HistoryManager historyManager;
+    protected final TreeSet<Task> prioritisedTasks;
 
     /**
      * @constructor
@@ -22,6 +27,16 @@ public class InMemoryTaskManager implements TaskManager {
     public InMemoryTaskManager() {
         this.tasks = new HashMap<>();
         this.historyManager = Managers.getDefaultHistory();
+        this.prioritisedTasks = new TreeSet<>(Comparator.comparing(Task::getStartTime));
+    }
+    
+    private void checkIntersections(LocalDateTime checkedTime) throws TimeInputException{
+    	for (Task task:this.getPrioritisedTasks()) {
+    		if(checkedTime.isAfter(task.getStartTime()) &&
+    		   checkedTime.isBefore(this.getTaskEndTime(task.getId()))){
+    			throw new TimeInputException("Время уже занято: ", task.getStartTime(), this.getTaskEndTime(task.getId()));
+    		}
+    	}
     }
 
     /**
@@ -69,12 +84,20 @@ public class InMemoryTaskManager implements TaskManager {
         }
         return subTasks;
     }
+    
+    public TreeSet<Task> getPrioritisedTasks(){
+    	return this.prioritisedTasks;
+    }
 
     /**
      * @clear all the tasks
      */
     public void clearTasks() {
-        this.tasks.clear();
+       for(Long task : tasks.keySet()) {
+    	   this.prioritisedTasks.remove(tasks.get(task));
+    	   this.tasks.remove(task);
+    	   this.historyManager.remove(task);
+       }
     }
 
     /**
@@ -158,7 +181,13 @@ public class InMemoryTaskManager implements TaskManager {
      */
     public void editCommonTask(Long id, CommonTask task) {
         if (tasks.get(id) instanceof CommonTask) {
-            this.tasks.put(id, task);
+        	try {
+            	this.checkIntersections(task.getStartTime());
+            	this.tasks.put(id, task);
+                this.prioritisedTasks.add(task);
+            } catch (TimeInputException e){
+            	e.getDetailedMessage();
+            }
         }
     }
 
@@ -167,8 +196,14 @@ public class InMemoryTaskManager implements TaskManager {
      */
     public void editEpicTask(Long id, EpicTask task) {
         if (tasks.get(id) instanceof EpicTask) {
-            this.tasks.put(id, task);
-        }
+            try {
+            	this.checkIntersections(task.getStartTime());
+            	this.tasks.put(id, task);
+                this.prioritisedTasks.add(task);
+            } catch (TimeInputException e){
+            	e.getDetailedMessage();
+            }
+        } 
     }
 
     /**
@@ -176,8 +211,14 @@ public class InMemoryTaskManager implements TaskManager {
      */
     public void editSubTask(Long id, SubTask task) {
         if (tasks.get(id) instanceof SubTask) {
-            this.tasks.put(id, task);
-            this.updateEpicStatus(task.getSuperTask());
+        	try {
+            	this.checkIntersections(task.getStartTime());
+            	this.tasks.put(id, task);
+            	this.updateEpic(task.getSuperTask());
+                this.prioritisedTasks.add(task);
+            } catch (TimeInputException e){
+            	e.getDetailedMessage();
+            }
         }
     }
 
@@ -186,7 +227,8 @@ public class InMemoryTaskManager implements TaskManager {
      */
     public void removeCommonTask(Long id) {
         if (this.tasks.get(id) instanceof CommonTask) {
-            this.tasks.remove(id);
+        	this.prioritisedTasks.remove(tasks.get(id));
+        	this.tasks.remove(id);
             this.historyManager.remove(id);
         }
     }
@@ -197,6 +239,7 @@ public class InMemoryTaskManager implements TaskManager {
     public void removeEpicTask(Long id) {
         if (this.tasks.get(id) instanceof EpicTask) {
             ArrayList<Long> subTasks = ((EpicTask) this.tasks.get(id)).getSubTasks();
+        	this.prioritisedTasks.remove(tasks.get(id));
             this.tasks.remove(id);
             this.historyManager.remove(id);
             for (Long subTask : subTasks) {
@@ -212,11 +255,12 @@ public class InMemoryTaskManager implements TaskManager {
     public void removeSubTask(Long id) {
         if (this.tasks.get(id) instanceof SubTask) {
             Long superTaskId = ((SubTask) this.tasks.get(id)).getSuperTask();
+        	this.prioritisedTasks.remove(tasks.get(id));
             this.tasks.remove(id);
             this.historyManager.remove(id);
             ((EpicTask) this.tasks.get(superTaskId)).getSubTasks()
                     .remove(((EpicTask) this.tasks.get(superTaskId)).getSubTasks().indexOf(id));
-            this.updateEpicStatus(superTaskId);
+            this.updateEpic(superTaskId);
         }
     }
 
@@ -230,19 +274,35 @@ public class InMemoryTaskManager implements TaskManager {
         }
         return subTasks;
     }
+    
+    public LocalDateTime getTaskEndTime(Long id) {
+    	Task task = this.tasks.get(id);
+    	LocalDateTime result = task.getStartTime();
+    	if (task instanceof EpicTask) {
+    		for (Long sub:((EpicTask) task).getSubTasks()) {
+            	result.plusMinutes(tasks.get(sub).getDuration().toMinutes());
+        	}
+    	}
+    	result.plusMinutes(task.getDuration().toMinutes());
+    	return result;
+    }
 
     /**
      * @update epic task status by id
      */
-    private void updateEpicStatus(Long id) {
+    private void updateEpic(Long id) {
 
         ArrayList<Status> statuses = new ArrayList<>();
-
+        TreeSet<LocalDateTime> timeStamps = new TreeSet<>();
+        Long totalDuration = 0L;
+        		
         // Создание ряда данных с подзадачами
         for (Long task : this.tasks.keySet()) {
             if (this.tasks.get(task) instanceof SubTask) {
                 if (((SubTask) this.tasks.get(task)).getSuperTask().equals(id)) {
                     statuses.add(this.tasks.get(task).getStatus());
+                    timeStamps.add(this.tasks.get(task).getStartTime());
+                    totalDuration += this.tasks.get(task).getDuration().toMinutes();
                 }
             }
         }
@@ -255,6 +315,14 @@ public class InMemoryTaskManager implements TaskManager {
         } else {
             this.tasks.get(id).setStatus(Status.IN_PROGRESS);
         }
+        
+        //Логика обновления времени
+        if (!timeStamps.isEmpty()) {
+        	tasks.get(id).setStartTime(timeStamps.first());
+        } else {
+        	
+        }
+        tasks.get(id).setDuration(Duration.ofMinutes(totalDuration));
     }
 
     /**
@@ -263,13 +331,19 @@ public class InMemoryTaskManager implements TaskManager {
     public Long createCommonTask(CommonTask task) {
         Long newId = null;
         if (task instanceof CommonTask) {
-            Random random = new Random();
-            newId = Math.abs(random.nextLong());
-            while (this.tasks.containsKey(newId)) {
-                newId = random.nextLong();
-            }
-            task.setId(newId);
-            this.tasks.put(newId, task);
+        	try {
+        		this.checkIntersections(task.getStartTime());
+        		Random random = new Random();
+        		newId = Math.abs(random.nextLong());
+        		while (this.tasks.containsKey(newId)) {
+        			newId = random.nextLong();
+        		}
+        		task.setId(newId);
+        		this.tasks.put(newId, task);
+        		this.prioritisedTasks.add(task);
+        	} catch (TimeInputException e){
+        		e.getDetailedMessage();
+        	}
         }
         return newId;
     }
@@ -280,6 +354,8 @@ public class InMemoryTaskManager implements TaskManager {
     public Long createEpicTask(EpicTask task) {
         Long newId = null;
         if (task instanceof EpicTask) {
+        	try {
+            	this.checkIntersections(task.getStartTime());
             Random random = new Random();
             newId = Math.abs(random.nextLong());
             while (this.tasks.containsKey(newId)) {
@@ -287,6 +363,10 @@ public class InMemoryTaskManager implements TaskManager {
             }
             task.setId(newId);
             this.tasks.put(newId, task);
+            this.prioritisedTasks.add(task);
+        	} catch (TimeInputException e){
+            	e.getDetailedMessage();
+            }
         }
         return newId;
     }
@@ -297,17 +377,23 @@ public class InMemoryTaskManager implements TaskManager {
     public Long createSubTask(SubTask task) {
         Long newId = null;
         if (task instanceof SubTask) {
-            Random random = new Random();
-            newId = Math.abs(random.nextLong());
-            while (this.tasks.containsKey(newId)) {
-                newId = random.nextLong();
+        	try {
+            	this.checkIntersections(task.getStartTime());
+            	Random random = new Random();
+            	newId = Math.abs(random.nextLong());
+            	while (this.tasks.containsKey(newId)) {
+            		newId = random.nextLong();
+            	}
+            	task.setId(newId);
+            	this.tasks.put(newId, task);
+            	ArrayList<Long> subTasks = ((EpicTask) this.tasks.get(task.getSuperTask())).getSubTasks();
+            	subTasks.add(newId);
+            	((EpicTask) this.tasks.get(task.getSuperTask())).setSubTasks(subTasks);
+            	this.updateEpic(task.getSuperTask());
+            	this.prioritisedTasks.add(task);
+        	} catch (TimeInputException e){
+            	e.getDetailedMessage();
             }
-            task.setId(newId);
-            this.tasks.put(newId, task);
-            ArrayList<Long> subTasks = ((EpicTask) this.tasks.get(task.getSuperTask())).getSubTasks();
-            subTasks.add(newId);
-            ((EpicTask) this.tasks.get(task.getSuperTask())).setSubTasks(subTasks);
-            this.updateEpicStatus(task.getSuperTask());
         }
         return newId;
     }
