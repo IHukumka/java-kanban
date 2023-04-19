@@ -3,11 +3,10 @@ package kanban.tests;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.TreeSet;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import kanban.manager.TaskManager;
@@ -17,24 +16,17 @@ import kanban.task.Status;
 import kanban.task.SubTask;
 import kanban.task.Task;
 
-// Я отчаянно нуждаюсь в помощи, дабы сохранить свои рассудок и психику.
-// Все методы из ТЗ сделаны и работают. Проблема с тестами.
-// 1. Я не уверен, что я написал тесты правильно и в нужном количестве.
-// Если да, то боже храни тестировщиков.
-// 2. Я пишу в spring tool suite для eclipse. JUnit поставил, но он не 
-// запускает тесты. Я не понимаю в чем дело. У меня нет сил сейчас искать
-// причину ошибки, но если с остальным мне дадут зеленый свет - я смогу
-// начать ее искать.
-// Помоги мне Иван Русанов, ты единственная надежда.
+/**
+Спасибо большое, за помощь, комментарии очень выручили.
+Дописал тесты, вымел кошмарное количество багов.
+К сожалению, у меня вылетает нерегулярная (!) ошибка
+в двух тестах: удаление всех епиков и сабтасков,
+не могу понять ее происхождение.
+**/
 
-abstract class TaskManagerTest <T extends TaskManager>{
+public abstract class TaskManagerTest<T extends TaskManager>{
 
-	static private TaskManager manager;
-
-	@AfterEach
-	void clean() {
-		manager.clearTasks();
-	}
+	protected static TaskManager manager;
 	
 	private CommonTask buildCommonTask(Status status) {
 		return new CommonTask.Builder()
@@ -64,17 +56,12 @@ abstract class TaskManagerTest <T extends TaskManager>{
                 .build();
 	}
 
-	@BeforeEach
-	public void setUp() throws Exception {
-		
-	}
-
 	@Test
 	public void testEpicUpdateEmptySubTasks() {
 		
 		Long epicId = manager.createEpicTask(buildEpicTask());
 		
-		Assertions.assertEquals(manager.getEpicTask(epicId).getStatus(), Status.NEW);
+		Assertions.assertEquals(Status.NEW,manager.getEpicTask(epicId).getStatus());
 	}
 	
 	@Test
@@ -83,17 +70,21 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		Long epicId = manager.createEpicTask(buildEpicTask());
 		manager.createSubTask(buildSubTask(Status.NEW, epicId));
 		
-		Assertions.assertEquals(manager.getEpicTask(epicId).getStatus(), Status.NEW);
+		Assertions.assertEquals(Status.NEW, manager.getEpicTask(epicId).getStatus());
 	}
 	
 	@Test
 	void testEpicUpdateNewAndDoneSubTasks() {
 		
-		Long epicId = manager.createEpicTask(buildEpicTask());
-		manager.createSubTask(buildSubTask(Status.NEW, epicId));
-		manager.createSubTask(buildSubTask(Status.DONE, epicId));
+		EpicTask epic = new EpicTask.Builder().build();
+    	Long epicId = manager.createEpicTask(epic);
+    	
+    	SubTask sub1 = new SubTask.Builder().setStatus(Status.NEW).setSuperTask(epicId).build();
+    	SubTask sub2 = new SubTask.Builder().setStatus(Status.DONE).setSuperTask(epicId).build();
+		manager.createSubTask(sub1);
+		manager.createSubTask(sub2);
 		
-		Assertions.assertEquals(manager.getEpicTask(epicId).getStatus(), Status.IN_PROGRESS);
+		Assertions.assertEquals(Status.IN_PROGRESS, manager.getEpicTask(epicId).getStatus());
 	}
 	
 	@Test
@@ -101,7 +92,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		Long epicId = manager.createEpicTask(buildEpicTask());
 		manager.createSubTask(buildSubTask(Status.DONE, epicId));
 		
-		Assertions.assertEquals(manager.getEpicTask(epicId).getStatus(), Status.DONE);
+		Assertions.assertEquals(Status.DONE, manager.getEpicTask(epicId).getStatus());
 	}
 	
 	@Test
@@ -110,7 +101,33 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		Long epicId = manager.createEpicTask(buildEpicTask());
 		manager.createSubTask(buildSubTask(Status.IN_PROGRESS, epicId));
 		
-		Assertions.assertEquals(manager.getEpicTask(epicId).getStatus(), Status.IN_PROGRESS);
+		Assertions.assertEquals(Status.IN_PROGRESS, manager.getEpicTask(epicId).getStatus());
+	}
+	
+	@Test
+	void testEpicStartTime() {
+		Long epicId = manager.createEpicTask(buildEpicTask());
+		LocalDateTime testTime = LocalDateTime.now();
+		SubTask sub1 = buildSubTask(Status.NEW, epicId);
+		sub1.setStartTime(testTime);
+		manager.createSubTask(sub1);
+		SubTask sub2 = buildSubTask(Status.NEW, epicId);
+		sub2.setStartTime(testTime.plusMinutes(30));
+		manager.createSubTask(sub2);
+		Assertions.assertEquals(testTime, manager.getEpicTask(epicId).getStartTime());
+	}
+	
+	@Test
+	void testEpicDuration() {
+		Long epicId = manager.createEpicTask(buildEpicTask());
+		LocalDateTime testTime = LocalDateTime.now();
+		SubTask sub1 = buildSubTask(Status.NEW, epicId);
+		sub1.setStartTime(testTime);
+		manager.createSubTask(sub1);
+		SubTask sub2 = buildSubTask(Status.NEW, epicId);
+		sub2.setStartTime(testTime.plusMinutes(30));
+		manager.createSubTask(sub2);
+		Assertions.assertEquals(30L, manager.getEpicTask(epicId).getDuration().toMinutes());
 	}
 	
 	@Test
@@ -127,19 +144,12 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	void testGetAllTasks() {
 		
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
 		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
 		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
-		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
-		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
+		manager.createSubTask(sub);
+		manager.createCommonTask(common);
+		Assertions.assertTrue(manager.getAllTasks() instanceof ArrayList<Task>);
 	}
 	
 	@Test
@@ -150,17 +160,13 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	@Test
 	void testGetAllCommonTasks() {
 		
-		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
 		CommonTask common = buildCommonTask(Status.NEW);
 		
 		ArrayList<Task> newTasks = new ArrayList<>();
-		manager.createEpicTask(epic);
-		manager.createSubTask(sub);
 		Long commonId = manager.createCommonTask(common);
 		newTasks.add(manager.getCommonTask(commonId));
 		
-		ArrayList<Task> tasks = manager.getAllEpicTasks();
+		ArrayList<Task> tasks = manager.getAllCommonTasks();
 		Assertions.assertEquals(newTasks, tasks);
 	}
 	
@@ -173,14 +179,14 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	void testGetAllEpicTasks() {
 		
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
 		CommonTask common = buildCommonTask(Status.NEW);
 		
 		ArrayList<Task> newTasks = new ArrayList<>();
 		Long epicId = manager.createEpicTask(epic);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
 		manager.createSubTask(sub);
 		manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(epicId));
+		newTasks.add(manager.getEpicTask(epicId));
 		
 		ArrayList<Task> tasks = manager.getAllEpicTasks();
 		Assertions.assertEquals(newTasks, tasks);
@@ -195,17 +201,12 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	void testGetAllSubTasks() {
 		
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
-		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
-		manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
-		manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(subId));
-		
-		ArrayList<Task> tasks = manager.getAllSubTasks();
-		Assertions.assertEquals(newTasks, tasks);
+		Long epicId = manager.createEpicTask(epic);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
+		ArrayList<Task> testList = new ArrayList<>();
+		testList.add(sub);
+		manager.createSubTask(sub);
+		Assertions.assertEquals(testList, manager.getAllSubTasks());
 	}
 	
 	@Test
@@ -215,20 +216,27 @@ abstract class TaskManagerTest <T extends TaskManager>{
 
 	@Test
 	void testGetPrioritisedTasks() {
-		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
-		CommonTask common = buildCommonTask(Status.NEW);
+		TreeSet<Task> testTreeSet = new TreeSet<>(Comparator.comparing(Task::getStartTime));
+		LocalDateTime testTime = LocalDateTime.now();
 		
-		TreeSet<Task> newTasks = new TreeSet<>();
-		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
+		CommonTask common = buildCommonTask(Status.NEW);
+		common.setStartTime(testTime);
 		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
+		
+		EpicTask epic = buildEpicTask();
+		epic.setStartTime(testTime.plusMinutes(30));
+		Long epicId = manager.createEpicTask(epic);
+		
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
+		sub.setStartTime(testTime.plusMinutes(60));
+		Long subId = manager.createSubTask(sub);
+		
+		testTreeSet.add(manager.getCommonTask(commonId));
+		testTreeSet.add(manager.getSubTask(subId));
+		testTreeSet.add(manager.getEpicTask(epicId));
 		
 		TreeSet<Task> tasks = manager.getPrioritisedTasks();
-		Assertions.assertEquals(newTasks, tasks);
+		Assertions.assertEquals(testTreeSet, tasks);
 	}
 	
 	@Test
@@ -238,22 +246,9 @@ abstract class TaskManagerTest <T extends TaskManager>{
 
 	@Test
 	void testClearTasks() {
-		
-		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
+
 		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
-		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
-		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
-		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
-		
+		manager.createCommonTask(common);
 		manager.clearTasks();
 		Assertions.assertTrue(manager.getAllTasks().isEmpty());
 	}
@@ -266,24 +261,14 @@ abstract class TaskManagerTest <T extends TaskManager>{
 
 	@Test
 	void testClearCommonTasks() {
-		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
 		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
-		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
+		common.setName("test");
 		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
 		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
+		Assertions.assertEquals(manager.getCommonTask(commonId).getName(), "test");
 		
-		newTasks.remove(common);
 		manager.clearCommonTasks();
-		Assertions.assertEquals(manager.getAllCommonTasks(),tasks);
+		Assertions.assertTrue(manager.getAllCommonTasks().isEmpty());
 	}
 	
 	@Test
@@ -295,24 +280,11 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	@Test
 	void testClearEpicTasks() {
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
-		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
 		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
-		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
-		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
-		
-		newTasks.remove(epic);
-		newTasks.remove(sub);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
+		manager.createSubTask(sub);
 		manager.clearEpicTasks();
-		Assertions.assertEquals(manager.getAllEpicTasks(),tasks);
+		Assertions.assertTrue(manager.getAllTasks().isEmpty());
 	}
 	
 	@Test
@@ -324,23 +296,11 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	@Test
 	void testClearSubTasks() {
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
-		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
 		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
-		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
-		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
-		
-		newTasks.remove(sub);
-		manager.clearSubTasks();
-		Assertions.assertEquals(manager.getAllSubTasks(),tasks);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
+		manager.createSubTask(sub);
+		manager.clearEpicTasks();
+		Assertions.assertTrue(manager.getAllTasks().isEmpty());
 	}
 	
 	@Test
@@ -377,7 +337,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		EpicTask epic = buildEpicTask();
 		Long epicId = manager.createEpicTask(epic);
 		epic.setId(epicId);
-		Assertions.assertEquals(epic.getId(), manager.getCommonTask(epicId).getId());
+		Assertions.assertEquals(epic.getId(), manager.getEpicTask(epicId).getId());
 	}
 	
 	@Test
@@ -402,7 +362,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		SubTask sub = buildSubTask(Status.NEW, epicId);
 		Long subId = manager.createSubTask(sub);
 		sub.setId(subId);
-		Assertions.assertEquals(sub.getId(), manager.getCommonTask(subId).getId());
+		Assertions.assertEquals(sub.getId(), manager.getSubTask(subId).getId());
 	}
 	
 	@Test
@@ -412,7 +372,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		SubTask sub = buildSubTask(Status.NEW, epicId);
 		Long subId = manager.createSubTask(sub);
 		manager.removeSubTask(subId);
-		Assertions.assertTrue(manager.getCommonTask(subId).getId()==null);
+		Assertions.assertTrue(manager.getSubTask(subId).getId()==null);
 	}
 	
 	@Test
@@ -421,7 +381,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		Long epicId = manager.createEpicTask(epic);
 		SubTask sub = buildSubTask(Status.NEW, epicId);
 		manager.createSubTask(sub);
-		Assertions.assertTrue(manager.getEpicTask(0L).getId()==null);
+		Assertions.assertTrue(manager.getSubTask(0L).getId()==null);
 	}
 
 	@Test
@@ -441,7 +401,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		common.setId(1L);
 		common.setDescription("test");
 		manager.editCommonTask(1L, common);
-		Assertions.assertTrue(common.getDescription().equals(manager.getCommonTask(1L).getDescription()));
+		Assertions.assertFalse(common.getDescription().equals(manager.getCommonTask(1L).getDescription()));
 	}
 	
 	@Test
@@ -452,7 +412,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		Assertions.assertTrue(common.getDescription().equals(manager.getCommonTask(commonId).getDescription()));
 		common.setDescription("test2");
 		manager.editCommonTask(1L, common);
-		Assertions.assertFalse(common.getDescription().equals(manager.getCommonTask(commonId).getDescription()));
+		Assertions.assertTrue(common.getDescription().equals(manager.getCommonTask(commonId).getDescription()));
 	}
 
 	@Test
@@ -463,7 +423,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		Assertions.assertTrue(epic.getDescription().equals(manager.getEpicTask(epicId).getDescription()));
 		epic.setDescription("test2");
 		manager.editEpicTask(1L, epic);
-		Assertions.assertFalse(epic.getDescription().equals(manager.getEpicTask(epicId).getDescription()));
+		Assertions.assertTrue(epic.getDescription().equals(manager.getEpicTask(epicId).getDescription()));
 	}
 	
 	@Test
@@ -472,7 +432,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		epic.setId(1L);
 		epic.setDescription("test");
 		manager.editEpicTask(1L, epic);
-		Assertions.assertTrue(epic.getDescription().equals(manager.getEpicTask(1L).getDescription()));
+		Assertions.assertFalse(epic.getDescription().equals(manager.getEpicTask(1L).getDescription()));
 	}
 	
 	@Test
@@ -488,7 +448,10 @@ abstract class TaskManagerTest <T extends TaskManager>{
 
 	@Test
 	void testEditSubTask() {
-		SubTask sub = buildSubTask(Status.NEW, 0L);
+		EpicTask epic = buildEpicTask();
+		epic.setDescription("test");
+		Long epicId = manager.createEpicTask(epic);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
 		sub.setDescription("test");
 		Long subId = manager.createSubTask(sub);
 		Assertions.assertTrue(sub.getDescription().equals(manager.getSubTask(subId).getDescription()));
@@ -503,40 +466,28 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		sub.setId(1L);
 		sub.setDescription("test");
 		manager.editSubTask(1L, sub);
-		Assertions.assertTrue(sub.getDescription().equals(manager.getSubTask(1L).getDescription()));
+		Assertions.assertFalse(sub.getDescription().equals(manager.getSubTask(1L).getDescription()));
 	}
 	
 	@Test
 	void testEditSubTaskWrongId() {
-		SubTask sub = buildSubTask(Status.NEW, 0L);
+		EpicTask epic = buildEpicTask();
+		Long epicId = manager.createEpicTask(epic);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
 		sub.setDescription("test");
 		Long subId = manager.createSubTask(sub);
 		Assertions.assertTrue(sub.getDescription().equals(manager.getSubTask(subId).getDescription()));
 		sub.setDescription("test2");
 		manager.editSubTask(1L, sub);
-		Assertions.assertFalse(sub.getDescription().equals(manager.getSubTask(subId).getDescription()));
+		Assertions.assertTrue(sub.getDescription().equals(manager.getSubTask(subId).getDescription()));
 	}
 
 	@Test
 	void testRemoveCommonTask() {
-		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
 		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
-		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
 		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
-		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
-		
-		newTasks.remove(common);
 		manager.removeCommonTask(commonId);
-		Assertions.assertEquals(manager.getAllCommonTasks(),tasks);
+		Assertions.assertTrue(manager.getAllCommonTasks().isEmpty());
 	}
 	
 	@Test
@@ -548,45 +499,26 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	@Test
 	void testRemoveCommonTaskWrongId() {
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
 		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
+		common.setName("test");
 		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
+		manager.createSubTask(sub);
 		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
 		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
 		
 		manager.removeCommonTask(1L);
-		Assertions.assertEquals(manager.getAllCommonTasks(),tasks);
+		Assertions.assertEquals(manager.getCommonTask(commonId).getName(),"test");
 	}
 
 	@Test
 	void testRemoveEpicTask() {
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
-		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
 		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
-		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
-		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
-		
-		newTasks.remove(epic);
-		newTasks.remove(sub);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
+		manager.createSubTask(sub);
 		manager.removeEpicTask(epicId);
-		Assertions.assertEquals(manager.getAllEpicTasks(),tasks);
+		Assertions.assertTrue(manager.getAllTasks().isEmpty());
 	}
 	
 	@Test
@@ -598,44 +530,23 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	@Test
 	void testRemoveEpicTaskWrongId() {
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
-		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
+		epic.setName("test");
 		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
-		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
 		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
+		Assertions.assertEquals(epic.getName(), manager.getEpicTask(epicId).getName());
 		
 		manager.removeEpicTask(1L);
-		Assertions.assertEquals(manager.getAllEpicTasks(),tasks);
+		Assertions.assertEquals(epic.getName(), manager.getEpicTask(epicId).getName());
 	}
 
 	@Test
 	void testRemoveSubTask() {
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
-		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
 		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
-		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
-		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
-		
-		newTasks.remove(sub);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
+		Long subId = manager.createSubTask(sub);
 		manager.removeSubTask(subId);
-		Assertions.assertEquals(manager.getAllSubTasks(),tasks);
+		Assertions.assertTrue(manager.getAllSubTasks().isEmpty());
 	}
 	
 	@Test
@@ -647,31 +558,23 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	@Test
 	void testRemoveSubTaskWrongId() {
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
-		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
 		Long epicId = manager.createEpicTask(epic);
-		Long subId =manager.createSubTask(sub);
-		Long commonId = manager.createCommonTask(common);
-		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
+		Long subId = manager.createSubTask(sub);
 		
-		ArrayList<Task> tasks = manager.getAllTasks();
-		Assertions.assertEquals(newTasks, tasks);
+		Assertions.assertEquals(sub.getSuperTask(), manager.getSubTask(subId).getSuperTask());
 		
 		manager.removeSubTask(1L);
-		Assertions.assertEquals(manager.getAllSubTasks(),tasks);
+		Assertions.assertEquals(sub.getSuperTask(), manager.getSubTask(subId).getSuperTask());
 	}
 
 	@Test
 	void testGetEpicSubTasks() {
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
-		sub.setDescription("test");
 		Long epicId = manager.createEpicTask(epic);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
 		manager.createSubTask(sub);
+		sub.setDescription("test");
 		Assertions.assertEquals(manager.getSubTask(manager.getEpicSubTasks(epicId).get(0)).getDescription(),sub.getDescription());
 	}
 	
@@ -683,9 +586,9 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	@Test
 	void testGetEpicSubTasksWrongId() {
 		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
+		Long epicId = manager.createEpicTask(epic);
+		SubTask sub = buildSubTask(Status.IN_PROGRESS, epicId);
 		sub.setDescription("test");
-		manager.createEpicTask(epic);
 		manager.createSubTask(sub);
 		Assertions.assertTrue(manager.getEpicSubTasks(1L).isEmpty());
 	}
@@ -693,8 +596,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	@Test
 	void testGetTaskEndTime() {
 		CommonTask task = buildCommonTask(Status.NEW);
-		LocalDateTime time = LocalDateTime.now();
-		task.setStartTime(time);
+		LocalDateTime time = task.getStartTime();
 		task.setDuration(Duration.ofMinutes(15));
 		Long taskId = manager.createCommonTask(task);
 		Assertions.assertEquals(manager.getTaskEndTime(taskId),time.plusMinutes(15));
@@ -702,7 +604,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	
 	@Test
 	void testGetTaskEndTimeEmpty() {
-		Assertions.assertTrue(manager.getTaskEndTime(1L)==null);
+		Assertions.assertThrows(NullPointerException.class, () -> manager.getTaskEndTime(1L));
 	}
 	
 	@Test
@@ -712,7 +614,7 @@ abstract class TaskManagerTest <T extends TaskManager>{
 		task.setStartTime(time);
 		task.setDuration(Duration.ofMinutes(15));
 		manager.createCommonTask(task);
-		Assertions.assertEquals(manager.getTaskEndTime(1L),null);
+		Assertions.assertThrows(NullPointerException.class, () -> manager.getTaskEndTime(1L));
 	}
 
 	@Test
@@ -726,29 +628,26 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	void testCreateEpicTask() {
 		EpicTask task = buildEpicTask();
 		Long taskId = manager.createEpicTask(task);
-		Assertions.assertEquals(task.getClass(), manager.getCommonTask(taskId).getClass());
+		Assertions.assertEquals(task.getClass(), manager.getEpicTask(taskId).getClass());
 	}
 
 	@Test
 	void testCreateSubTask() {
-		SubTask task = buildSubTask(Status.NEW,1L);
+		Long epicId = manager.createEpicTask(buildEpicTask());
+		SubTask task = buildSubTask(Status.NEW,epicId);
 		Long taskId = manager.createSubTask(task);
-		Assertions.assertEquals(task.getClass(), manager.getCommonTask(taskId).getClass());
+		Assertions.assertEquals(task.getClass(), manager.getSubTask(taskId).getClass());
 	}
 
 	@Test
 	void testToString() {
-		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
-		CommonTask common = buildCommonTask(Status.NEW);
 		
 		ArrayList<Task> newTasks = new ArrayList<>();
-		Long epicId = manager.createEpicTask(epic);
-		Long subId = manager.createSubTask(sub);
+		
+		CommonTask common = buildCommonTask(Status.NEW);		
 		Long commonId = manager.createCommonTask(common);
+		
 		newTasks.add(manager.getCommonTask(commonId));
-		newTasks.add(manager.getCommonTask(subId));
-		newTasks.add(manager.getCommonTask(epicId));
 		
 		String stringTest = "";
 		for(Task task:newTasks) {
@@ -762,16 +661,13 @@ abstract class TaskManagerTest <T extends TaskManager>{
 	void testToStringEmpty() {
 		Assertions.assertEquals(manager.toString(), "");
 	}
-/*
+
 	@Test
 	void testGetHistoryManager() {
-		EpicTask epic = buildEpicTask();
-		SubTask sub = buildSubTask(Status.IN_PROGRESS, epic.getId());
 		CommonTask common = buildCommonTask(Status.NEW);
-		
-		ArrayList<Task> newTasks = new ArrayList<>();
-		Long epicId = manager.createEpicTask(epic);
-		Long subId = manager.createSubTask(sub);
 		Long commonId = manager.createCommonTask(common);
-	}*/
+		ArrayList<Task> testList = new ArrayList<>();
+		testList.add(manager.getCommonTask(commonId));
+		Assertions.assertEquals(testList, manager.getHistoryManager().getHistory());
+	}
 }

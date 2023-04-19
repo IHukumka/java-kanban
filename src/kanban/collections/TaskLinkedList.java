@@ -24,7 +24,7 @@ public final class TaskLinkedList<Task> {
      * @add a task to the end of the chain
      */
     public void add(Task task) {
-        linkLast(task);
+        push(task);
     }
     
     /**
@@ -58,7 +58,8 @@ public final class TaskLinkedList<Task> {
     /**
      * @create tail node
      */
-    private void linkLast(Task task) {
+    @SuppressWarnings("unused")
+	private void linkLast(Task task) {
         CustomNode<Task> last = tail;
         CustomNode<Task> newNode = new CustomNode<Task>(last, task, null);
         Long id = ((kanban.task.Task) task).getId();

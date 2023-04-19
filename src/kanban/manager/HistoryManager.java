@@ -25,4 +25,6 @@ public interface HistoryManager {
      * @print all tasks from history line by line
      */
     public void printHistory();
+    
+    public void clear();
 }

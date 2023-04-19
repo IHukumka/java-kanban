@@ -50,4 +50,8 @@ public class InMemoryHistoryManager implements HistoryManager {
             System.out.println(task.toString());
         }
     }
+    
+    public void clear() {
+    	this.history.removeFirst();
+    }
 }

@@ -8,7 +8,6 @@ import kanban.task.CommonTask;
 import kanban.task.EpicTask;
 import kanban.task.SubTask;
 import kanban.task.Task;
-import kanban.tests.TaskGenerator;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +16,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,20 +26,14 @@ import java.util.ArrayList;
 
 public class FileBackedTaskManager extends InMemoryTaskManager  {
     
-    public static final String saveFile = System.getProperty("user.dir")+"\\tasks.json";
+    public static final String saveFile = System.getProperty("user.dir")+"\\test.json";
     
-    public FileBackedTaskManager(ArrayList<Task>[] loadedData) {
-        super();
-        if (loadedData[0] != null){
-        	for (Task task:loadedData[0]) {
-            	this.tasks.put(task.getId(), task);
-            }
-            for (Task task:loadedData[1]) {
-            	this.historyManager.add(task);
-            }
-            for (Task task:loadedData[2]) {
-            	this.prioritisedTasks.add(task);
-            }
+    public FileBackedTaskManager(ArrayList<Task> loadedData) {
+    	super();
+        for(Task task:loadedData) {
+        	this.tasks.put(task.getId(), task);
+        	this.historyManager.add(task);
+        	this.prioritisedTasks.add(task);
         }
     }
     
@@ -49,19 +41,10 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
 	public void save() {
 		
         File file = new File(saveFile);
-        @SuppressWarnings("unchecked")
-        ArrayList<Task>[] dataToSave = new ArrayList[3];
-        dataToSave[0] = this.getAllTasks();
-        dataToSave[1] = this.getHistoryManager().getHistory();
-        for(Task task:this.prioritisedTasks) {
-        	dataToSave[2].add(task);
-        }
-        
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new JavaTimeModule());
-            mapper.writeValue(file, dataToSave);
-            System.out.println("Данные сохранены!");
+            mapper.writeValue(file, this.getAllTasks());
         }catch (IOException e) { 
             throw new ManagerSaveException("Ошибка записи данных в файл: " + saveFile);
         }
@@ -69,24 +52,18 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
     
     public static FileBackedTaskManager loadFromFile(File file) {
         
-    	@SuppressWarnings("unchecked")
-		ArrayList<Task>[] loadedData = new ArrayList[3];
+		ArrayList<Task> loadedData = new ArrayList<>();
 
         try {
             ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
-            mapper.readerFor(Task.class);
             mapper.registerModule(new JavaTimeModule());
-            TypeReference<ArrayList<Task>[]> typeRef = new TypeReference<ArrayList<Task>[]>() {};
+            TypeReference<ArrayList<Task>> typeRef = new TypeReference<ArrayList<Task>>() {};
             
-            loadedData[0] = mapper.readValue(file,typeRef)[0];
-            loadedData[1] = mapper.readValue(file,typeRef)[1];
-            loadedData[2] = mapper.readValue(file,typeRef)[2];
-            System.out.println("Данные загружены!");
-        }catch (IOException|NullPointerException e) {
+            loadedData = mapper.readValue(file,typeRef);
+        } catch (IOException|NullPointerException e) {
             System.out.println("Ошибка загрузки данных!");
             e.printStackTrace();
-        }
+        } 
         return new FileBackedTaskManager(loadedData);
     }
     
