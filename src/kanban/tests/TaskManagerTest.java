@@ -16,13 +16,6 @@ import kanban.task.Status;
 import kanban.task.SubTask;
 import kanban.task.Task;
 
-/**
-Спасибо большое, за помощь, комментарии очень выручили.
-Дописал тесты, вымел кошмарное количество багов.
-К сожалению, у меня вылетает нерегулярная (!) ошибка
-в двух тестах: удаление всех епиков и сабтасков,
-не могу понять ее происхождение.
-**/
 
 public abstract class TaskManagerTest<T extends TaskManager>{
 

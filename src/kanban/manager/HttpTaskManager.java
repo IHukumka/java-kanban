@@ -1,73 +1,66 @@
 package kanban.manager;
 
-import kanban.exceptions.ManagerSaveException;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import kanban.api.KVTaskClient;
 import kanban.task.CommonTask;
 import kanban.task.EpicTask;
 import kanban.task.SubTask;
 import kanban.task.Task;
 
-import java.io.File;
-import java.io.IOException;
-
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import java.util.ArrayList;
-
-
-public class FileBackedTaskManager extends InMemoryTaskManager  {
-    
-    private File file;
-    
-    public FileBackedTaskManager(ArrayList<Task> loadedData, File file) {
-    	super();
-        for(Task task:loadedData) {
+public class HttpTaskManager extends FileBackedTaskManager{
+	
+	private static KVTaskClient client;
+	private String key;
+	private static ObjectMapper mapper = new ObjectMapper();
+	
+	public HttpTaskManager(String url, String key) throws IOException, Exception {
+		super();
+		client = new KVTaskClient(url);
+		for(Task task:fromUrl(url,key)) {
         	this.tasks.put(task.getId(), task);
         	this.historyManager.add(task);
         	this.prioritisedTasks.add(task);
         }
-        this.file = file;
-    }
-    
-    public FileBackedTaskManager() {
-    	
-    }
-    
-	public void save() {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new JavaTimeModule());
-            mapper.writeValue(file, this.getAllTasks());
-        }catch (IOException e) { 
-            throw new ManagerSaveException("Ошибка записи данных в файл: " + file.getAbsolutePath());
-        }
-    }
-    
-    public static FileBackedTaskManager loadFromFile(File file) {
-        
+	}
+	
+	
+	public static ArrayList<Task> fromUrl(String url, String key) throws Exception {		
 		ArrayList<Task> loadedData = new ArrayList<>();
-
-        try {
-            ObjectMapper mapper = new ObjectMapper();
+		try {
             mapper.registerModule(new JavaTimeModule());
             TypeReference<ArrayList<Task>> typeRef = new TypeReference<ArrayList<Task>>() {};
-            
-            loadedData = mapper.readValue(file,typeRef);
+            loadedData = mapper.readValue(client.load(key),typeRef);
         } catch (IOException|NullPointerException e) {
             System.out.println("Ошибка загрузки данных!");
             e.printStackTrace();
-        } 
-        return new FileBackedTaskManager(loadedData, file);
-    }
-    
-    @Override
+        } catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return loadedData;
+	}
+	
+	@Override
+	public void save(){
+		super.save();
+		try {
+			String dataToSave = mapper.
+	        		writerWithDefaultPrettyPrinter().
+	        		writeValueAsString(tasks);
+			client.put(key, dataToSave);
+		} catch (IOException e){
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
     public void clearTasks() {
         super.clearTasks();
         this.save();
@@ -146,19 +139,5 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
         Long newTask = super.createSubTask(task);
         this.save();
         return newTask;
-    }
-    
-    public static class LongSerializer extends JsonSerializer<Long> {
-        @Override
-        public void serialize(Long value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeString(value.toString());
-        }
-    }
-
-    public static class LongDeserializer extends JsonDeserializer<Long> {
-        @Override
-        public Long deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            return p.getValueAsLong();
-        }
     }
 }

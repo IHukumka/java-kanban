@@ -104,9 +104,15 @@ public class InMemoryTaskManager implements TaskManager {
      * @clear all the Common tasks
      */
     public void clearCommonTasks() {
-        for (Long task : tasks.keySet()) {
-            if (tasks.get(task) instanceof CommonTask) {
-                this.removeCommonTask(task);
+    	ArrayList<Long> ids = new ArrayList<>();
+    	for (Long id : this.tasks.keySet()) {
+    		if (tasks.get(id) instanceof EpicTask){
+    			ids.add(id);
+    		}
+    	}
+    	for (Long id : ids) {
+            if (tasks.get(id) instanceof CommonTask) {
+                this.removeCommonTask(id);
             }
         }
     }
@@ -115,9 +121,15 @@ public class InMemoryTaskManager implements TaskManager {
      * @clear all the Epic tasks
      */
     public void clearEpicTasks() {
-        for (Long task : tasks.keySet()) {
-            if (tasks.get(task) instanceof EpicTask) {
-                this.removeEpicTask(task);
+    	ArrayList<Long> ids = new ArrayList<>();
+    	for (Long id : this.tasks.keySet()) {
+    		if (tasks.get(id) instanceof EpicTask){
+    			ids.add(id);
+    		}
+    	}
+    	for (Long id : ids) {
+            if (tasks.get(id) instanceof EpicTask) {
+                this.removeEpicTask(id);
             }
         }
     }
@@ -126,9 +138,15 @@ public class InMemoryTaskManager implements TaskManager {
      * @clear all the Sub tasks
      */
     public void clearSubTasks() {
-        for (Long task : tasks.keySet()) {
-            if (tasks.get(task) instanceof SubTask) {
-                this.removeSubTask(task);
+    	ArrayList<Long> ids = new ArrayList<>();
+    	for (Long id : this.tasks.keySet()) {
+    		if (tasks.get(id) instanceof SubTask){
+    			ids.add(id);
+    		}
+    	}
+    	for (Long id : ids) {
+            if (tasks.get(id) instanceof SubTask) {
+                this.removeSubTask(id);
             }
         }
     }
