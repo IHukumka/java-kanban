@@ -24,7 +24,7 @@ import java.util.ArrayList;
 
 public class FileBackedTaskManager extends InMemoryTaskManager  {
     
-    private File file;
+	private static final File file = new File(System.getProperty("user.dir")+"\\tasks.json");
     
     public FileBackedTaskManager(ArrayList<Task> loadedData, File file) {
     	super();
@@ -33,7 +33,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
         	this.historyManager.add(task);
         	this.prioritisedTasks.add(task);
         }
-        this.file = file;
     }
     
     public FileBackedTaskManager() {
