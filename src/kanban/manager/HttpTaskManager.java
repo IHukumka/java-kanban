@@ -15,9 +15,8 @@ import kanban.task.Task;
 
 public class HttpTaskManager extends FileBackedTaskManager{
 	
-	private static KVTaskClient client;
+	private KVTaskClient client;
 	private String key;
-	private static ObjectMapper mapper = new ObjectMapper();
 	
 	public HttpTaskManager(String url, String key) throws IOException, Exception {
 		super();
@@ -29,9 +28,9 @@ public class HttpTaskManager extends FileBackedTaskManager{
         }
 	}
 	
-	
-	public static ArrayList<Task> fromUrl(String url, String key) throws Exception {		
+	public ArrayList<Task> fromUrl(String url, String key) throws Exception {		
 		ArrayList<Task> loadedData = new ArrayList<>();
+		ObjectMapper mapper = new ObjectMapper();
 		try {
             mapper.registerModule(new JavaTimeModule());
             TypeReference<ArrayList<Task>> typeRef = new TypeReference<ArrayList<Task>>() {};
@@ -48,6 +47,8 @@ public class HttpTaskManager extends FileBackedTaskManager{
 	@Override
 	public void save(){
 		super.save();
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new JavaTimeModule());
 		try {
 			String dataToSave = mapper.
 	        		writerWithDefaultPrettyPrinter().

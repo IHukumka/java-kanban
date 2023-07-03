@@ -1,6 +1,5 @@
 package kanban.manager;
 
-import kanban.exceptions.ManagerSaveException;
 import kanban.task.CommonTask;
 import kanban.task.EpicTask;
 import kanban.task.SubTask;
@@ -24,7 +23,7 @@ import java.util.ArrayList;
 
 public class FileBackedTaskManager extends InMemoryTaskManager  {
     
-	private static final File file = new File(System.getProperty("user.dir")+"\\tasks.json");
+	private File file = new File(System.getProperty("user.dir")+"\\tasks.json");
     
     public FileBackedTaskManager(ArrayList<Task> loadedData, File file) {
     	super();
@@ -45,7 +44,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
             mapper.registerModule(new JavaTimeModule());
             mapper.writeValue(file, this.getAllTasks());
         }catch (IOException e) { 
-            throw new ManagerSaveException("Ошибка записи данных в файл: " + file.getAbsolutePath());
+            System.out.println("Ошибка записи данных в файл: " + file.getAbsolutePath());
         }
     }
     
@@ -59,7 +58,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager  {
             TypeReference<ArrayList<Task>> typeRef = new TypeReference<ArrayList<Task>>() {};
             
             loadedData = mapper.readValue(file,typeRef);
-        } catch (IOException|NullPointerException e) {
+        } catch (IOException e) {
             System.out.println("Ошибка загрузки данных!");
             e.printStackTrace();
         } 

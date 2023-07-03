@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Random;
 import java.util.TreeSet;
 
 import kanban.exceptions.TimeInputException;
@@ -106,7 +105,7 @@ public class InMemoryTaskManager implements TaskManager {
     public void clearCommonTasks() {
     	ArrayList<Long> ids = new ArrayList<>();
     	for (Long id : this.tasks.keySet()) {
-    		if (tasks.get(id) instanceof EpicTask){
+    		if (tasks.get(id) instanceof CommonTask){
     			ids.add(id);
     		}
     	}
@@ -353,11 +352,7 @@ public class InMemoryTaskManager implements TaskManager {
         if (task instanceof CommonTask) {
         	try {
         		this.checkIntersections(task.getStartTime());
-        		Random random = new Random();
-        		newId = Math.abs(random.nextLong());
-        		while (this.tasks.containsKey(newId)) {
-        			newId = random.nextLong();
-        		}
+        		newId = task.getId();
         		task.setId(newId);
         		this.tasks.put(newId, task);
         		this.prioritisedTasks.add(task);
@@ -375,16 +370,12 @@ public class InMemoryTaskManager implements TaskManager {
         Long newId = null;
         if (task instanceof EpicTask) {
         	try {
-            	this.checkIntersections(task.getStartTime());
-            Random random = new Random();
-            newId = Math.abs(random.nextLong());
-            while (this.tasks.containsKey(newId)) {
-                newId = random.nextLong();
-            }
-            task.setId(newId);
-            this.tasks.put(newId, task);
-            this.prioritisedTasks.add(task);
-            this.updateEpic(newId);
+        		this.checkIntersections(task.getStartTime());
+        		newId = task.getId();
+        		task.setId(newId);
+        		this.tasks.put(newId, task);
+        		this.prioritisedTasks.add(task);
+        		this.updateEpic(newId);
         	} catch (TimeInputException e){
             	e.getDetailedMessage();
             }
@@ -400,12 +391,8 @@ public class InMemoryTaskManager implements TaskManager {
         if (task instanceof SubTask) {
         	try {
             	this.checkIntersections(task.getStartTime());
-            	Random random = new Random();
-            	newId = Math.abs(random.nextLong());
-            	while (this.tasks.containsKey(newId)) {
-            		newId = random.nextLong();
-            	}
-            	task.setId(newId);
+            	newId = task.getId();
+            	task.setId(task.getId());
             	this.tasks.put(newId, task);
             	ArrayList<Long> subTasks = ((EpicTask) this.tasks.get(task.getSuperTask())).getSubTasks();
             	subTasks.add(newId);

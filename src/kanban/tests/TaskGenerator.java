@@ -15,7 +15,7 @@ import kanban.task.SubTask;
 
 public abstract class TaskGenerator {
 	
-	static final long DATE1 = 1672520400000L;
+	static final long DATE1 = 1687963398969L;
     static final long DATE2 = 1704056400000L;
 
     // Генератор случайных обычных задач.
@@ -33,6 +33,7 @@ public abstract class TaskGenerator {
                     .setStatus(Status.NEW)
                     .setStartTime(start)
                     .setDuration(duration)
+                    .setId((long) id)
                     .build();
             result.add(commonTask);
         }
@@ -52,6 +53,7 @@ public abstract class TaskGenerator {
                     .setDescription("Тест описания эпика " + id)
                     .setStatus(Status.NEW)
                     .setStartTime(start)
+                    .setId((long) id)
                     .build();
             result.add(epicTask);
         }
@@ -74,6 +76,7 @@ public abstract class TaskGenerator {
                     .setSuperTask(epicIds.get(r.nextInt(epicIds.size())))
                     .setStartTime(start)
                     .setDuration(duration)
+                    .setId((long) id)
                     .build();
             result.add(subTask);
         }

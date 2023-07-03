@@ -14,6 +14,7 @@ import com.sun.net.httpserver.HttpServer;
 /**
  * Постман: https://www.getpostman.com/collections/a83b61d9e1c81c10575c
  */
+
 public class KVServer {
 	public static final int PORT = 8078;
 	private final String apiToken;
@@ -21,6 +22,15 @@ public class KVServer {
 	private final Map<String, String> data = new HashMap<>();
 
 	public KVServer() throws IOException {
+		apiToken = generateApiToken();
+		server = HttpServer.create(new InetSocketAddress("localhost", PORT), 0);
+		server.createContext("/register", this::register);
+		server.createContext("/save", this::save);
+		server.createContext("/load", this::load);
+	}
+	
+	public KVServer(String key, String value) throws IOException {
+		this.data.put(key, value);
 		apiToken = generateApiToken();
 		server = HttpServer.create(new InetSocketAddress("localhost", PORT), 0);
 		server.createContext("/register", this::register);
@@ -108,6 +118,10 @@ public class KVServer {
 		System.out.println("Открой в браузере http://localhost:" + PORT + "/");
 		System.out.println("API_TOKEN: " + apiToken);
 		server.start();
+	}
+	
+	public void stop() {
+		server.stop(0);
 	}
 
 	private String generateApiToken() {
