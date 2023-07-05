@@ -9,9 +9,9 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -46,7 +46,7 @@ class HttpTaskServerTest {
 		kvServer = new KVServer();
 	   	kvServer.start();
 		
-    	taskServer = new HttpTaskServer("http://localhost:8078", "User");
+    	taskServer = new HttpTaskServer("http://localhost:8078", key);
     	taskServer.start();
     	
     	ArrayList<Task> commons = new ArrayList<Task>();
@@ -60,7 +60,7 @@ class HttpTaskServerTest {
                 .uri(URI.create("http://localhost:8080/tasks/common"))
                 .POST(BodyPublishers.ofString(dataToSave))
                 .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        client.send(request, HttpResponse.BodyHandlers.ofString());
     	
     	
 		ArrayList<Task> epics = new ArrayList<Task>();
@@ -72,7 +72,7 @@ class HttpTaskServerTest {
                 .uri(URI.create("http://localhost:8080/tasks/epic"))
                 .POST(BodyPublishers.ofString(dataToSave))
                 .build();
-        response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        client.send(request, HttpResponse.BodyHandlers.ofString());
         
         ArrayList<Task> subs = new ArrayList<Task>();
 		subs.add(sub);
@@ -83,7 +83,7 @@ class HttpTaskServerTest {
                 .uri(URI.create("http://localhost:8080/tasks/sub"))
                 .POST(BodyPublishers.ofString(dataToSave))
                 .build();
-        response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        client.send(request, HttpResponse.BodyHandlers.ofString());
    
 	}
 	
@@ -91,6 +91,22 @@ class HttpTaskServerTest {
 	void setAfterEach() throws Exception {
 		kvServer.stop();
 		taskServer.stop();
+	}
+	
+	public HttpResponse<String> getPostRequestResponse(URI uri,Task task) throws IOException, InterruptedException{
+		ArrayList<Task> tasks = new ArrayList<Task>();
+		tasks.add(task);
+		ObjectMapper mapper = new ObjectMapper();
+    	mapper.registerModule(new JavaTimeModule());
+    	String dataToSave = mapper.
+	        	writerWithDefaultPrettyPrinter().
+	        	writeValueAsString(tasks);
+		HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri)
+                .POST(BodyPublishers.ofString(dataToSave))
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        return response;
 	}
 
 	
@@ -102,7 +118,7 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -113,7 +129,7 @@ class HttpTaskServerTest {
                 .DELETE()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -124,7 +140,7 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -135,7 +151,7 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -146,7 +162,7 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -157,7 +173,7 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -168,7 +184,7 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -179,7 +195,7 @@ class HttpTaskServerTest {
                 .DELETE()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -190,26 +206,14 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
 	void testHandlePostTasksEpicEdit() throws IOException, InterruptedException {
 		URI uri = URI.create(url+"/tasks/epic/edit/2");
 		EpicTask epic = new EpicTask.Builder().setId(2L).setName("UnEpic").build();
-		ArrayList<Task> tasks = new ArrayList<Task>();
-		tasks.add(epic);
-		ObjectMapper mapper = new ObjectMapper();
-    	mapper.registerModule(new JavaTimeModule());
-    	String dataToSave = mapper.
-	        	writerWithDefaultPrettyPrinter().
-	        	writeValueAsString(tasks);
-		HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .POST(BodyPublishers.ofString(dataToSave))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(201, response.statusCode());
+        assertEquals(201, getPostRequestResponse(uri, epic).statusCode());
 	}
 	
 	@Test
@@ -220,26 +224,14 @@ class HttpTaskServerTest {
                 .DELETE()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
 	void testHandlePostTasksEpic() throws IOException, InterruptedException {
 		URI uri = URI.create(url+"/tasks/epic");
-		EpicTask Epic = new EpicTask.Builder().setId(4L).setName("UnEpic").build();
-		ArrayList<Task> tasks = new ArrayList<Task>();
-		tasks.add(Epic);
-		ObjectMapper mapper = new ObjectMapper();
-    	mapper.registerModule(new JavaTimeModule());
-    	String dataToSave = mapper.
-	        	writerWithDefaultPrettyPrinter().
-	        	writeValueAsString(tasks);
-		HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .POST(BodyPublishers.ofString(dataToSave))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(201, response.statusCode());
+		EpicTask epic = new EpicTask.Builder().setId(4L).setName("UnEpic").build();
+        assertEquals(201, getPostRequestResponse(uri, epic).statusCode());
 	}
 	
 	@Test
@@ -250,7 +242,7 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -261,7 +253,7 @@ class HttpTaskServerTest {
                 .DELETE()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -272,26 +264,14 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
 	void testHandlePostTasksCommonEdit() throws IOException, InterruptedException {
 		URI uri = URI.create(url+"/tasks/common/edit/1");
 		CommonTask common = new CommonTask.Builder().setId(1L).setName("UnCommon").build();
-		ArrayList<Task> tasks = new ArrayList<Task>();
-		tasks.add(common);
-		ObjectMapper mapper = new ObjectMapper();
-    	mapper.registerModule(new JavaTimeModule());
-    	String dataToSave = mapper.
-	        	writerWithDefaultPrettyPrinter().
-	        	writeValueAsString(tasks);
-		HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .POST(BodyPublishers.ofString(dataToSave))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(201, response.statusCode());
+        assertEquals(201, getPostRequestResponse(uri, common).statusCode());
 	}
 	
 	@Test
@@ -302,26 +282,14 @@ class HttpTaskServerTest {
                 .DELETE()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
 	void testHandlePostTasksCommon() throws IOException, InterruptedException {
 		URI uri = URI.create(url+"/tasks/common");
 		CommonTask common = new CommonTask.Builder().setId(4L).setName("UnCommon").build();
-		ArrayList<Task> tasks = new ArrayList<Task>();
-		tasks.add(common);
-		ObjectMapper mapper = new ObjectMapper();
-    	mapper.registerModule(new JavaTimeModule());
-    	String dataToSave = mapper.
-	        	writerWithDefaultPrettyPrinter().
-	        	writeValueAsString(tasks);
-		HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .POST(BodyPublishers.ofString(dataToSave))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(201, response.statusCode());
+        assertEquals(201, getPostRequestResponse(uri, common).statusCode());
 	}
 	
 	@Test
@@ -332,7 +300,7 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -343,7 +311,7 @@ class HttpTaskServerTest {
                 .DELETE()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
@@ -354,26 +322,14 @@ class HttpTaskServerTest {
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
 	void testHandlePostTasksSubEdit() throws IOException, InterruptedException {
 		URI uri = URI.create(url+"/tasks/sub/edit/3");
 		SubTask sub = new SubTask.Builder().setId(3L).setName("UnSub").setSuperTask(2L).build();
-		ArrayList<Task> tasks = new ArrayList<Task>();
-		tasks.add(sub);
-		ObjectMapper mapper = new ObjectMapper();
-    	mapper.registerModule(new JavaTimeModule());
-    	String dataToSave = mapper.
-	        	writerWithDefaultPrettyPrinter().
-	        	writeValueAsString(tasks);
-		HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .POST(BodyPublishers.ofString(dataToSave))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(201, response.statusCode());
+        assertEquals(201, getPostRequestResponse(uri, sub).statusCode());
 	}
 	
 	@Test
@@ -384,26 +340,14 @@ class HttpTaskServerTest {
                 .DELETE()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(200, response.statusCode());
+        assertEquals(200, response.statusCode());
 	}
 	
 	@Test
 	void testHandlePostTasksSub() throws IOException, InterruptedException {
 		URI uri = URI.create(url+"/tasks/sub");
 		SubTask sub = new SubTask.Builder().setId(4L).setName("UnSub").setSuperTask(2L).build();
-		ArrayList<Task> tasks = new ArrayList<Task>();
-		tasks.add(sub);
-		ObjectMapper mapper = new ObjectMapper();
-    	mapper.registerModule(new JavaTimeModule());
-    	String dataToSave = mapper.
-	        	writerWithDefaultPrettyPrinter().
-	        	writeValueAsString(tasks);
-		HttpRequest request = HttpRequest.newBuilder()
-                .uri(uri)
-                .POST(BodyPublishers.ofString(dataToSave))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        Assertions.assertEquals(201, response.statusCode());
+        assertEquals(201, getPostRequestResponse(uri, sub).statusCode());
 	}
 	
 }

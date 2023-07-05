@@ -1,9 +1,9 @@
 package kanban.tests;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import kanban.api.KVServer;
 import kanban.manager.HttpTaskManager;
@@ -48,26 +48,26 @@ class HttpTaskManagerTest {
 	@Test
 	void testClearTasks() {
 		manager.clearTasks();
-		Assertions.assertTrue(manager.getAllTasks().isEmpty());
+		assertTrue(manager.getAllTasks().isEmpty());
 	}
 
 	@Test
 	void testClearCommonTasks() {
 		manager.clearCommonTasks();
-		Assertions.assertTrue(manager.getAllCommonTasks().isEmpty());
+		assertTrue(manager.getAllCommonTasks().isEmpty());
 	}
 
 	@Test
 	void testClearEpicTasks() {
 		manager.clearEpicTasks();
-		Assertions.assertTrue(manager.getAllEpicTasks().isEmpty());
-		Assertions.assertTrue(manager.getAllSubTasks().isEmpty());
+		assertTrue(manager.getAllEpicTasks().isEmpty());
+		assertTrue(manager.getAllSubTasks().isEmpty());
 	}
 
 	@Test
 	void testClearSubTasks() {
 		manager.clearSubTasks();
-		Assertions.assertTrue(manager.getAllSubTasks().isEmpty());
+		assertTrue(manager.getAllSubTasks().isEmpty());
 	}
 
 	@Test
@@ -75,7 +75,7 @@ class HttpTaskManagerTest {
 		CommonTask task = manager.getCommonTask(commonId);
 		task.setName("Test");
 		manager.editCommonTask(commonId, task);
-		Assertions.assertEquals("Test", manager.getCommonTask(commonId).getName());
+		assertEquals("Test", manager.getCommonTask(commonId).getName());
 	}
 
 	@Test
@@ -83,7 +83,7 @@ class HttpTaskManagerTest {
 		EpicTask task = manager.getEpicTask(epicId);
 		task.setName("Test");
 		manager.editEpicTask(epicId, task);
-		Assertions.assertEquals("Test", manager.getEpicTask(epicId).getName());
+		assertEquals("Test", manager.getEpicTask(epicId).getName());
 	}
 
 	@Test
@@ -91,48 +91,48 @@ class HttpTaskManagerTest {
 		SubTask task = manager.getSubTask(subId);
 		task.setName("Test");
 		manager.editSubTask(commonId, task);
-		Assertions.assertEquals("Test", manager.getSubTask(subId).getName());
+		assertEquals("Test", manager.getSubTask(subId).getName());
 	}
 
 	@Test
 	void testRemoveCommonTask() {
 		manager.removeCommonTask(commonId);
-		Assertions.assertTrue(manager.getAllCommonTasks().isEmpty());
+		assertTrue(manager.getAllCommonTasks().isEmpty());
 	}
 
 	@Test
 	void testRemoveEpicTask() {
 		manager.removeEpicTask(epicId);
-		Assertions.assertTrue(manager.getAllEpicTasks().isEmpty());
-		Assertions.assertTrue(manager.getAllSubTasks().isEmpty());
+		assertTrue(manager.getAllEpicTasks().isEmpty());
+		assertTrue(manager.getAllSubTasks().isEmpty());
 	}
 
 	@Test
 	void testRemoveSubTask() {
 		manager.clearSubTasks();
-		Assertions.assertTrue(manager.getAllSubTasks().isEmpty());
-		Assertions.assertTrue(manager.getEpicSubTasks(epicId).isEmpty());
+		assertTrue(manager.getAllSubTasks().isEmpty());
+		assertTrue(manager.getEpicSubTasks(epicId).isEmpty());
 	}
 
 	@Test
 	void testCreateCommonTask() {
 		CommonTask task = new CommonTask.Builder().setName("Test").build();
 		Long newTaskId = manager.createCommonTask(task);
-		Assertions.assertEquals("Test", manager.getCommonTask(newTaskId).getName());
+		assertEquals("Test", manager.getCommonTask(newTaskId).getName());
 	}
 
 	@Test
 	void testCreateEpicTask() {
 		EpicTask task = new EpicTask.Builder().setName("Test").build();
 		Long newTaskId = manager.createEpicTask(task);
-		Assertions.assertEquals("Test", manager.getEpicTask(newTaskId).getName());
+		assertEquals("Test", manager.getEpicTask(newTaskId).getName());
 	}
 
 	@Test
 	void testCreateSubTask() {
 		SubTask task = new SubTask.Builder().setName("Test").setSuperTask(epicId).build();
 		Long newTaskId = manager.createSubTask(task);
-		Assertions.assertEquals("Test", manager.getSubTask(newTaskId).getName());
+		assertEquals("Test", manager.getSubTask(newTaskId).getName());
 	}
 
 	@Test
@@ -140,7 +140,7 @@ class HttpTaskManagerTest {
 		manager = new HttpTaskManager(url, key);
 		manager.clearEpicTasks();
 		manager.save();
-		Assertions.assertEquals(manager.getAllTasks(), manager.fromUrl(url, key));
+		assertEquals(manager.getAllTasks(), manager.fromUrl(url, key));
 	}
 
 	@Test
@@ -148,7 +148,7 @@ class HttpTaskManagerTest {
 		manager = new HttpTaskManager(url, key);
 		manager.clearEpicTasks();
 		manager.save();
-		Assertions.assertEquals(manager.getAllTasks(), manager.fromUrl(url, key));
+		assertEquals(manager.getAllTasks(), manager.fromUrl(url, key));
 	}
 
 }

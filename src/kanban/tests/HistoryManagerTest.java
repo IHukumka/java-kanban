@@ -1,6 +1,7 @@
 package kanban.tests;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -17,22 +18,22 @@ class HistoryManagerTest {
 	private static HistoryManager manager;
  
 	@BeforeAll
-	static void setUpBeforeClass() throws Exception {
+	static void setUpBeforeClass() {
 		manager = Managers.getDefaultHistory();
 	}
 
 	@AfterEach
-	void tearDown() throws Exception {
+	void tearDown() {
 		manager.getHistory().clear();
 	}
 
 	@Test
 	void testAdd() {
 		CommonTask task = new CommonTask.Builder().build();
-		ArrayList<Task> testList = new ArrayList<>();
-		testList.add(task);
+		List<Task> test = new ArrayList<>();
+		test.add(task);
 		manager.add(task);
-		Assertions.assertEquals(testList,manager.getHistory());
+		Assertions.assertEquals(test,manager.getHistory());
 	}
 
 	@Test

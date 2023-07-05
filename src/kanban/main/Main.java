@@ -47,7 +47,7 @@ public class Main {
                 .uri(URI.create("http://localhost:8080/tasks/common"))
                 .POST(BodyPublishers.ofString(dataToSave))
                 .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        client.send(request, HttpResponse.BodyHandlers.ofString());
     	
     	
 		ArrayList<Task> epics = new ArrayList<Task>();
@@ -59,7 +59,7 @@ public class Main {
                 .uri(URI.create("http://localhost:8080/tasks/epic"))
                 .POST(BodyPublishers.ofString(dataToSave))
                 .build();
-        response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        client.send(request, HttpResponse.BodyHandlers.ofString());
         
         ArrayList<Task> subs = new ArrayList<Task>();
 		subs.add(sub);
@@ -70,7 +70,7 @@ public class Main {
                 .uri(URI.create("http://localhost:8080/tasks/sub"))
                 .POST(BodyPublishers.ofString(dataToSave))
                 .build();
-        response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        client.send(request, HttpResponse.BodyHandlers.ofString());
     	
     }
 }
